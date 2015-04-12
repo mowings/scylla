@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
+	"github.com/mowings/scylla/shellescape"
 	"io"
 	"io/ioutil"
 	"log"
