@@ -1,1 +1,1 @@
-# Scylla -- a better cron
+# Scylla - a better cron
