@@ -3,12 +3,12 @@ package ssh
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
-	//	"github.com/mowings/scylla/shellescape"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -34,6 +34,12 @@ const (
 )
 
 const NO_TIMEOUT = 0
+
+var shellescape_re = regexp.MustCompile("([^A-Za-z0-9_\\-.,:\\/@\n])")
+
+func Shellescape(str string) string {
+	return shellescape_re.ReplaceAllString(str, "\\$1")
+}
 
 func (k *Keychain) Key(i int) (key ssh.PublicKey, err error) {
 	if i >= len(k.signers) {
@@ -141,12 +147,20 @@ func (conn *SshConnection) Run(command string, timeout int, sudo int) (*string, 
 	} else {
 		conn.network_conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 	}
+	cmd := command
+	if sudo == SUDO {
+		cmd = "sudo /bin/bash -c " + Shellescape(command)
+	} else if sudo == SUDO_I {
+		cmd = "sudo -i /bin/bash -c " + Shellescape(command)
+	}
+
+	log.Printf("Executing [%s] on %s...\n", cmd, conn.server)
 
 	stdout := bytes.NewBufferString("")
 	stderr := bytes.NewBufferString("")
 	session.Stdout = stdout
 	session.Stderr = stderr
-	err = session.Run(command)
+	err = session.Run(cmd)
 	stdout_s := stdout.String()
 	stderr_s := stderr.String()
 	return &stdout_s, &stderr_s, err

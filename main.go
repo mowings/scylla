@@ -15,7 +15,7 @@ func main() {
 	}
 	defer conn.Close()
 	log.Println("Running command 1")
-	stdout, stderr, err := conn.Run("sleep 5; ls -la", 1, ssh.NORMAL)
+	stdout, stderr, err := conn.Run("cat /var/log/syslog | grep 'pixelsquid' | wc -l", 0, ssh.SUDO_I)
 	if err != nil {
 		log.Println("Failed to run: " + err.Error())
 	} else {
