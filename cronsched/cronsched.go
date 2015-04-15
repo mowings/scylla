@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	//	"time"
+	"time"
 )
 
 // Regexps
@@ -16,11 +16,15 @@ var STEP_REX = regexp.MustCompile("^\\*/\\d{1,2}$")
 
 type ParsedCronSched struct {
 	Line    string
-	Minutes []int
-	Hours   []int
-	Mday    []int
-	Month   []int
-	Dow     []int
+	Minutes map[int]bool
+	Hours   map[int]bool
+	Mday    map[int]bool
+	Month   map[int]bool
+	Dow     map[int]bool
+}
+
+func (sched *ParsedCronSched) Match(t *time.Time) bool {
+	return false
 }
 
 func (sched *ParsedCronSched) Parse(line string) (err error) {
@@ -30,6 +34,7 @@ func (sched *ParsedCronSched) Parse(line string) (err error) {
 		return errors.New("Wrong number of sections in cron entry")
 	}
 	sched.Line = line
+
 	if sched.Minutes, err = parseCronSection(parts[0], 60, 0); err != nil {
 		return err
 	}
@@ -47,11 +52,11 @@ func (sched *ParsedCronSched) Parse(line string) (err error) {
 	return err
 }
 
-func parseCronSection(section string, divs int, offset int) (units []int, err error) {
-	units = make([]int, 0, divs)
+func parseCronSection(section string, divs int, offset int) (units map[int]bool, err error) {
+	units = make(map[int]bool)
 	if section == "*" {
-		for i := 0; i < cap(units); i++ {
-			units = append(units, i+offset)
+		for i := 0; i < divs; i++ {
+			units[i+offset] = true
 		}
 		return units, nil // Match anything
 	}
@@ -62,11 +67,11 @@ func parseCronSection(section string, divs int, offset int) (units []int, err er
 			if unit >= divs+offset {
 				return nil, errors.New("Cron stanza " + part + " is out of range.")
 			}
-			units = appendWithoutDupes(units, unit)
+			units[unit] = true
 		} else if RANGE_REX.MatchString(part) {
-			units, err = processRange(part, units, offset)
+			err = processRange(part, units, divs, offset)
 		} else if STEP_REX.MatchString(part) {
-			units, err = processSteps(part, units, offset)
+			err = processSteps(part, units, divs, offset)
 		} else {
 			return nil, errors.New("Did not understand stanza: " + part)
 		}
@@ -75,39 +80,30 @@ func parseCronSection(section string, divs int, offset int) (units []int, err er
 	return units, nil
 }
 
-func processRange(stanza string, units []int, offset int) ([]int, error) {
+func processRange(stanza string, units map[int]bool, divs int, offset int) error {
 	parts := strings.Split(stanza, "-")
 	start, _ := strconv.Atoi(parts[0])
 	end, _ := strconv.Atoi(parts[1])
-	if start >= cap(units)+offset || end >= cap(units)+offset {
-		return nil, errors.New("stanza out of range: " + stanza)
+	if start >= divs+offset || end >= divs+offset {
+		return errors.New("stanza out of range: " + stanza)
 	}
 	if start > end {
 		start, end = end, start
 	}
 	for i := start; i <= end; i++ {
-		units = appendWithoutDupes(units, i)
+		(units)[i+offset] = true
 	}
-	return units, nil
+	return nil
 }
 
-func processSteps(stanza string, units []int, offset int) ([]int, error) {
+func processSteps(stanza string, units map[int]bool, divs int, offset int) error {
 	parts := strings.Split(stanza, "/")
 	step, _ := strconv.Atoi(parts[1])
-	if step >= cap(units)+offset {
-		return nil, errors.New("stanza out of range: " + stanza)
+	if step >= divs+offset {
+		return errors.New("stanza out of range: " + stanza)
 	}
-	for i := 0; i < cap(units); i += step {
-		units = appendWithoutDupes(units, i+offset)
+	for i := 0; i < divs; i += step {
+		units[i+offset] = true
 	}
-	return units, nil
-}
-
-func appendWithoutDupes(units []int, unit int) []int {
-	for _, u := range units {
-		if u == unit {
-			return units
-		}
-	}
-	return append(units, unit)
+	return nil
 }
