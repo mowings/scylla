@@ -24,6 +24,14 @@ type ParsedCronSched struct {
 }
 
 func (sched *ParsedCronSched) Match(t *time.Time) bool {
+	h, m, _ := t.Clock()
+	_, mon, mday := t.Date()
+	dow := t.Weekday()
+
+	if sched.Minutes[m] && sched.Hours[h] && sched.Mday[mday] && sched.Month[int(mon)] && sched.Dow[int(dow)] {
+		return true
+	}
+
 	return false
 }
 
