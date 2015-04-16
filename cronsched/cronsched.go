@@ -27,7 +27,6 @@ func (sched *ParsedCronSched) Match(t *time.Time) bool {
 	h, m, _ := t.Clock()
 	_, mon, mday := t.Date()
 	dow := t.Weekday()
-
 	if sched.minutes[m] && sched.hours[h] && sched.mdays[mday] && sched.months[int(mon)] && sched.dows[int(dow)] {
 		return true
 	}

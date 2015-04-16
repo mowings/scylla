@@ -42,6 +42,27 @@ func TestMatch(t *testing.T) {
 	if sched.Match(&tm) {
 		t.Error("Matched when it shouldn't")
 	}
+	tm, _ = time.Parse(time.RFC3339, "2014-11-26T15:30:00Z")
+	err = sched.Parse("*/10 3,15 * * 3,5")
+	if !sched.Match(&tm) {
+		t.Error("Matched failed")
+	}
+	tm, _ = time.Parse(time.RFC3339, "2014-11-27T15:30:00Z")
+	if sched.Match(&tm) {
+		t.Error("Matched when it shouldn't")
+	}
+	tm, _ = time.Parse(time.RFC3339, "2014-11-26T15:30:00Z")
+	err = sched.Parse("*/10 3,15 * * 3-5")
+	if !sched.Match(&tm) {
+		t.Error("Matched failed")
+	}
+	tm, _ = time.Parse(time.RFC3339, "2014-11-27T15:30:00Z")
+	if !sched.Match(&tm) {
+		t.Error("Match failed")
+	}
+	tm, _ = time.Parse(time.RFC3339, "2014-11-29T15:30:00Z")
+	if sched.Match(&tm) {
+		t.Error("Match when it shouldn't")
+	}
 
-	fmt.Println(tm)
 }
