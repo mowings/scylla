@@ -16,11 +16,11 @@ var STEP_REX = regexp.MustCompile("^\\*/\\d{1,2}$")
 
 type ParsedCronSched struct {
 	Line    string
-	Minutes map[int]bool
-	Hours   map[int]bool
-	Mday    map[int]bool
-	Month   map[int]bool
-	Dow     map[int]bool
+	minutes map[int]bool
+	hours   map[int]bool
+	mdays   map[int]bool
+	months  map[int]bool
+	dows    map[int]bool
 }
 
 func (sched *ParsedCronSched) Match(t *time.Time) bool {
@@ -28,7 +28,7 @@ func (sched *ParsedCronSched) Match(t *time.Time) bool {
 	_, mon, mday := t.Date()
 	dow := t.Weekday()
 
-	if sched.Minutes[m] && sched.Hours[h] && sched.Mday[mday] && sched.Month[int(mon)] && sched.Dow[int(dow)] {
+	if sched.minutes[m] && sched.hours[h] && sched.mdays[mday] && sched.months[int(mon)] && sched.dows[int(dow)] {
 		return true
 	}
 
@@ -43,19 +43,19 @@ func (sched *ParsedCronSched) Parse(line string) (err error) {
 	}
 	sched.Line = line
 
-	if sched.Minutes, err = parseCronSection(parts[0], 60, 0); err != nil {
+	if sched.minutes, err = parseCronSection(parts[0], 60, 0); err != nil {
 		return err
 	}
-	if sched.Hours, err = parseCronSection(parts[1], 24, 0); err != nil {
+	if sched.hours, err = parseCronSection(parts[1], 24, 0); err != nil {
 		return err
 	}
-	if sched.Mday, err = parseCronSection(parts[2], 31, 1); err != nil {
+	if sched.mdays, err = parseCronSection(parts[2], 31, 1); err != nil {
 		return err
 	}
-	if sched.Month, err = parseCronSection(parts[3], 12, 1); err != nil {
+	if sched.months, err = parseCronSection(parts[3], 12, 1); err != nil {
 		return err
 	}
-	sched.Dow, err = parseCronSection(parts[4], 7, 0)
+	sched.dows, err = parseCronSection(parts[4], 7, 0)
 
 	return err
 }
