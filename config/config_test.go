@@ -6,11 +6,18 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	config, err := New("test.ini")
+	cfg, err := New("test.ini")
 	if err != nil {
 		t.Error("Got error on parse " + err.Error())
 	} else {
-		log.Println(*config)
-		log.Println(*config.Jobs["test"])
+		log.Printf("Defaults: %+v\n", cfg.Defaults)
+		log.Println("Pools:")
+		for k, v := range cfg.Pool {
+			log.Printf("%s ==> %+v\n", k, *v)
+		}
+		log.Println("Jobs: ")
+		for k, v := range cfg.Job {
+			log.Printf("%s ==> %+v\n", k, *v)
+		}
 	}
 }
