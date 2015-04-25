@@ -14,12 +14,20 @@ var RANGE_REX = regexp.MustCompile("^\\d{1,2}-\\d{1,2}$")
 var STEP_REX = regexp.MustCompile("^\\*/\\d{1,2}$")
 
 type ParsedCronSched struct {
-	Line    string
-	minutes map[int]bool
-	hours   map[int]bool
-	mdays   map[int]bool
-	months  map[int]bool
-	dows    map[int]bool
+	unparsed string
+	minutes  map[int]bool
+	hours    map[int]bool
+	mdays    map[int]bool
+	months   map[int]bool
+	dows     map[int]bool
+}
+
+func (sched *ParsedCronSched) Type() string {
+	return "cron"
+}
+
+func (sched *ParsedCronSched) Unparsed() string {
+	return sched.unparsed
 }
 
 func (sched *ParsedCronSched) Match(t *time.Time) bool {
@@ -34,12 +42,13 @@ func (sched *ParsedCronSched) Match(t *time.Time) bool {
 }
 
 func (sched *ParsedCronSched) Parse(line string) (err error) {
+	sched.unparsed = line
+
 	parts := strings.Split(line, " ")
 
 	if len(parts) != 5 {
 		return errors.New("Wrong number of sections in cron entry")
 	}
-	sched.Line = line
 
 	if sched.minutes, err = parseCronSection(parts[0], 60, 0); err != nil {
 		return err
