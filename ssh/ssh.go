@@ -25,13 +25,8 @@ type SshConnection struct {
 	network_conn    net.Conn
 	client_conn     ssh.Conn
 	client          *ssh.Client
+	SudoCommand     string
 }
-
-const (
-	NORMAL = iota
-	SUDO   = iota
-	SUDO_I = iota
-)
 
 const NO_TIMEOUT = 0
 
@@ -86,6 +81,7 @@ func MakeKeyring(key_filenames []string) ssh.AuthMethod {
 func (conn *SshConnection) Open(server string, auths ssh.AuthMethod, timeout int) error {
 	s := strings.Split(server, "@")
 	conn.server = s[1]
+	conn.SudoCommand = "sudo -i /bin/bash -c"
 	conn.config = &ssh.ClientConfig{
 		User: s[0],
 		Auth: []ssh.AuthMethod{auths},
@@ -135,7 +131,7 @@ func (conn *SshConnection) NewSession() (*ssh.Session, error) {
 	return sess, err
 }
 
-func (conn *SshConnection) Run(command string, timeout int, sudo int) (*string, *string, error) {
+func (conn *SshConnection) Run(command string, timeout int, sudo bool) (*string, *string, error) {
 	session, err := conn.NewSession()
 	if err != nil {
 		log.Printf("Unable to open session: %s", err.Error())
@@ -148,10 +144,8 @@ func (conn *SshConnection) Run(command string, timeout int, sudo int) (*string, 
 		conn.network_conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 	}
 	cmd := command
-	if sudo == SUDO {
-		cmd = "sudo /bin/bash -c " + Shellescape(command)
-	} else if sudo == SUDO_I {
-		cmd = "sudo -i /bin/bash -c " + Shellescape(command)
+	if sudo {
+		cmd = conn.SudoCommand + " " + Shellescape(command)
 	}
 
 	log.Printf("Executing [%s] on %s...\n", cmd, conn.server)

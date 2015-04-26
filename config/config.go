@@ -45,5 +45,13 @@ func New(fn string) (cfg *Config, err error) {
 	var config = Config{}
 	cfg = &config
 	err = gcfg.ReadFileInto(cfg, fn)
+	if err == nil {
+		err = config.Validate()
+	}
 	return cfg, err
+}
+
+func (cfg *Config) Validate() (err error) {
+
+	return err
 }
