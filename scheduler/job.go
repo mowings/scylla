@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var rexSched = regexp.MustCompile("^([a-z) (.+)")
+var rexSched = regexp.MustCompile("^([a-z]+) (.+)")
 
 type RunStatus int
 
@@ -30,6 +30,15 @@ type RunReport struct {
 	EndTime    time.Time
 	CommandRun string // Command can be transformed
 	StatusCode int
+}
+
+type StatusResponse struct {
+	RunReports []RunReport
+}
+
+type StatusRequest struct {
+	Name string
+	Chan chan StatusResponse
 }
 
 //

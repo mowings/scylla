@@ -35,7 +35,12 @@ type Defaults struct {
 	OnFailure      string `gcfg:"on-failure"`
 }
 
+type Web struct {
+	Listen string
+}
+
 type Config struct {
+	Web      Web
 	Defaults Defaults
 	Pool     map[string]*PoolSpec
 	Job      map[string]*JobSpec

@@ -6,7 +6,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	cfg, err := New("test.ini")
+	cfg, err := New("test.conf")
 	if err != nil {
 		t.Error("Got error on parse " + err.Error())
 	} else {
