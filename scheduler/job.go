@@ -45,7 +45,7 @@ type StatusRequest struct {
 type Job struct {
 	Name            string
 	JobSpec         *config.JobSpec
-	Schedule        *sched.Sched
+	Schedule        sched.Sched
 	Running         bool
 	RunId           int
 	RunsOutstanding int
@@ -54,6 +54,8 @@ type Job struct {
 	LastChecked     time.Time
 	PoolCounter     int
 }
+
+type JobList map[string]*Job
 
 func New(jobspec *config.JobSpec, name string) (*Job, error) {
 	job := Job{}
@@ -74,8 +76,8 @@ func (job *Job) Update(jobspec *config.JobSpec) error {
 	} else {
 		return errors.New("Unknown schedule type: " + jobspec.Schedule)
 	}
-	job.Schedule = &schedule
-	err := schedule.Parse(jobspec.Schedule)
+	job.Schedule = schedule
+	err := schedule.Parse(m[2])
 	var t time.Time
 	job.LastChecked = t
 	return err

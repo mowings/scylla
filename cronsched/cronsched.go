@@ -47,7 +47,7 @@ func (sched *ParsedCronSched) Parse(line string) (err error) {
 	parts := strings.Split(line, " ")
 
 	if len(parts) != 5 {
-		return errors.New("Wrong number of sections in cron entry")
+		return errors.New("Wrong number of sections in cron entry: " + line)
 	}
 
 	if sched.minutes, err = parseCronSection(parts[0], 60, 0); err != nil {
