@@ -19,6 +19,9 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 		select {
 		case <-time.After(time.Second * TIMEOUT):
 			log.Println("boom")
+		case _ = <-load_chan:
+			log.Println("Got config load request.")
 		}
+
 	}
 }
