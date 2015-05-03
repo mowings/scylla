@@ -61,7 +61,7 @@ type Job struct {
 	RunsQueued      int
 	LastChecked     time.Time
 	Pool            []string
-	PoolCounter     int
+	PoolIndex       int
 	PoolMode        string
 }
 
@@ -86,6 +86,10 @@ func (job *Job) Complete(r *RunReport) bool {
 				log.Printf("   %s (%s) %d\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.StatusCode)
 			}
 		}
+		job.PoolIndex += 1
+		if job.PoolIndex >= len(job.Pool) {
+			job.PoolIndex = 0
+		}
 		return true
 	}
 	return false
@@ -99,7 +103,7 @@ func (job *Job) Run(run_report_chan chan *RunReport) {
 	}
 	job.RunReports = make([]*RunReport, 0, 1)
 	job.Running = true
-	host := qualifyHost(job.Pool[job.PoolCounter], job.Defaults.User, job.Defaults.Port)
+	host := qualifyHost(job.Pool[job.PoolIndex], job.Defaults.User, job.Defaults.Port)
 
 	go func() {
 		reports := make([]CommandRunReport, len(job.JobSpec.Command))
@@ -162,7 +166,7 @@ func (job *Job) UpdatePool(cfg *config.Config) error {
 			job.PoolMode = p[1]
 		}
 	}
-	job.PoolCounter = 0
+	job.PoolIndex = 0
 
 	return nil
 }
