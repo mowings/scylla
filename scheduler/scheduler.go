@@ -34,8 +34,6 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				log.Printf("Received run report for unknown job/run id: %s (%d). Discarding\n", run_report.JobName, run_report.RunId)
 				break
 			}
-			log.Printf("Command complete for job %s.%d\n", run_report.JobName, run_report.RunId)
-			log.Printf("Command : \"%s\" on host %s", run_report.CommandRun, run_report.Host)
 			if job.Complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
