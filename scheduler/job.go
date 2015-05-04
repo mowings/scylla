@@ -86,7 +86,7 @@ func (job *Job) Complete(r *RunReport) bool {
 		for _, run_report := range job.RunReports {
 			log.Printf("%s.%d.%s\n", run_report.JobName, run_report.RunId, run_report.Host)
 			for _, command_run_report := range run_report.CommandRunReports {
-				log.Printf("   %s (%s) %s\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.Error)
+				log.Printf("   %s (%s) err = %s\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.Error)
 			}
 		}
 		job.PoolIndex += 1
@@ -132,13 +132,13 @@ func (job *Job) Run(run_report_chan chan *RunReport) {
 		if err != nil {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
 		} else {
-			for _, report := range reports {
-				report.StartTime = time.Now()
+			for index, report := range reports {
+				reports[index].StartTime = time.Now()
 				log.Printf("%s.%d - running command \"%s\" on host %s\n", r.JobName, r.RunId, report.CommandSpecified, host)
 				stdout, stderr, err := conn.Run(report.CommandSpecified, 0, false)
 				if err != nil {
-					report.Error = err.Error()
-					report.StatusCode = -1
+					reports[index].Error = err.Error()
+					reports[index].StatusCode = -1
 				}
 				if stdout != nil {
 					log.Println("Stdout\n" + *stdout)
@@ -146,7 +146,8 @@ func (job *Job) Run(run_report_chan chan *RunReport) {
 				if stderr != nil {
 					log.Println("Sterr\n" + *stderr)
 				}
-				report.EndTime = time.Now()
+				reports[index].CommandRun = report.CommandSpecified
+				reports[index].EndTime = time.Now()
 			}
 		}
 		run_report_chan <- &r
