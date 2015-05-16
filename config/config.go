@@ -4,6 +4,8 @@ import (
 	"code.google.com/p/gcfg"
 )
 
+const DEFAULT_RUN_DIR = "/var/scylla"
+
 type PoolSpec struct {
 	Name string
 	Host []string
@@ -25,6 +27,7 @@ type JobSpec struct {
 }
 
 type Defaults struct {
+	RunDir         string `gcfg:"run-dir"`
 	Keyfile        string
 	Password       string
 	ConnectTimeout int    `gcfg:"connect-timeout"`
@@ -53,6 +56,10 @@ func New(fn string) (cfg *Config, err error) {
 	if err == nil {
 		err = config.Validate()
 	}
+	if cfg.Defaults.RunDir == "" {
+		cfg.Defaults.RunDir = DEFAULT_RUN_DIR
+	}
+
 	return cfg, err
 }
 

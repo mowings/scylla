@@ -1,13 +1,18 @@
 package scheduler
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/mowings/scylla/config"
 	"github.com/mowings/scylla/cronsched"
 	"github.com/mowings/scylla/sched"
 	"github.com/mowings/scylla/ssh"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,7 +28,7 @@ const (
 	Abandoned
 )
 
-type CommandRunReport struct {
+type CommandRunData struct {
 	CommandSpecified string
 	CommandRun       string
 	Error            string
@@ -33,16 +38,16 @@ type CommandRunReport struct {
 }
 
 // Message -- run status
-type RunReport struct {
-	JobName           string
-	RunId             int
-	Status            RunStatus
-	Host              string
-	CommandRunReports []CommandRunReport
+type RunData struct {
+	JobName     string
+	RunId       int
+	Status      RunStatus
+	Host        string
+	CommandRuns []CommandRunData
 }
 
 type StatusResponse struct {
-	RunReports []RunReport
+	Runs []RunData
 }
 
 type StatusRequest struct {
@@ -59,7 +64,7 @@ type Job struct {
 	Running         bool
 	RunId           int
 	RunsOutstanding int
-	RunReports      []*RunReport
+	Runs            []*RunData
 	RunsQueued      int
 	LastChecked     time.Time
 	Pool            []string
@@ -77,15 +82,22 @@ func New(cfg *config.Config, name string) (*Job, error) {
 	return &job, err
 }
 
-func (job *Job) Complete(r *RunReport) bool {
-	job.RunReports = append(job.RunReports, r)
-	if len(job.RunReports) == cap(job.RunReports) {
+func (job *Job) Save() error {
+	path := filepath.Join(job.Defaults.RunDir, job.Name, "job.json")
+	b, err := json.Marshal(job)
+	ioutil.WriteFile(path, b, 0644)
+	return err
+}
+
+func (job *Job) Complete(r *RunData) bool {
+	job.Runs = append(job.Runs, r)
+	if len(job.Runs) == cap(job.Runs) {
 		job.Running = false
-		job.RunId += 1
 		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
-		for _, run_report := range job.RunReports {
+		job.RunId += 1
+		for _, run_report := range job.Runs {
 			log.Printf("%s.%d.%s\n", run_report.JobName, run_report.RunId, run_report.Host)
-			for _, command_run_report := range run_report.CommandRunReports {
+			for _, command_run_report := range run_report.CommandRuns {
 				log.Printf("   %s (%s) err = %s\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.Error)
 			}
 		}
@@ -109,42 +121,47 @@ func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnectio
 	return &c, err
 }
 
-func (job *Job) Run(run_report_chan chan *RunReport) {
+func (job *Job) Run(run_report_chan chan *RunData) {
 	if job.Running {
 		job.RunsQueued += 1
 		return
 	}
-	job.RunReports = make([]*RunReport, 0, 1)
+	job.Runs = make([]*RunData, 0, 1)
 	job.Running = true
 	host := qualifyHost(job.Pool[job.PoolIndex], job.Defaults.User, job.Defaults.Port)
-
-	reports := make([]CommandRunReport, len(job.JobSpec.Command))
-	r := RunReport{job.Name, job.RunId, Succeeded, host, reports}
+	sudo := job.JobSpec.Sudo
+	reports := make([]CommandRunData, len(job.JobSpec.Command))
+	r := RunData{job.Name, job.RunId, Succeeded, host, reports}
 	for index, command := range job.JobSpec.Command {
-		reports[index] = CommandRunReport{command, "", "", 0, time.Now(), time.Now()}
+		reports[index] = CommandRunData{command, "", "", 0, time.Now(), time.Now()}
 	}
 	keyfile := job.Defaults.Keyfile
 	connection_timeout := job.Defaults.ConnectTimeout
+	run_timeout := job.JobSpec.RunTimeout
+	run_dir := filepath.Join(job.Defaults.RunDir, job.Name, strconv.Itoa(job.RunId))
 
 	go func() {
+		os.MkdirAll(run_dir, 0755)
 		conn, err := openConnection(keyfile, host, connection_timeout)
 		defer conn.Close()
 		if err != nil {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
 		} else {
 			for index, report := range reports {
+				command_dir := filepath.Join(run_dir, strconv.Itoa(index))
+				os.MkdirAll(command_dir, 0775)
 				reports[index].StartTime = time.Now()
 				log.Printf("%s.%d - running command \"%s\" on host %s\n", r.JobName, r.RunId, report.CommandSpecified, host)
-				stdout, stderr, err := conn.Run(report.CommandSpecified, 0, false)
+				stdout, stderr, err := conn.Run(report.CommandSpecified, run_timeout, sudo)
 				if err != nil {
 					reports[index].Error = err.Error()
 					reports[index].StatusCode = -1
 				}
 				if stdout != nil {
-					log.Println("Stdout\n" + *stdout)
+					ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
 				}
 				if stderr != nil {
-					log.Println("Sterr\n" + *stderr)
+					ioutil.WriteFile(filepath.Join(command_dir, "stderr"), []byte(*stderr), 0644)
 				}
 				reports[index].CommandRun = report.CommandSpecified
 				reports[index].EndTime = time.Now()

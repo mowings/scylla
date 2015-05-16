@@ -18,7 +18,7 @@ func Run() (load_chan chan string, status_chan chan StatusRequest) {
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 	jobs := JobList{}
 	var cur_config *config.Config
-	run_report_chan := make(chan *RunReport)
+	run_report_chan := make(chan *RunData)
 	for {
 		select {
 		case <-time.After(time.Second * TIMEOUT):
@@ -37,6 +37,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			if job.Complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
+			job.Save()
 
 		case path := <-load_chan:
 			log.Println("Got config load request.")
@@ -53,11 +54,13 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
 						} else {
 							jobs[name] = new_job
+							new_job.Save()
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
 					}
 				}
+
 			}
 		}
 	}
