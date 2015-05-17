@@ -84,8 +84,11 @@ func New(cfg *config.Config, name string) (*Job, error) {
 
 func (job *Job) Save() error {
 	path := filepath.Join(job.Defaults.RunDir, job.Name, "job.json")
+	os.MkdirAll(filepath.Dir(path), 0755)
 	b, err := json.Marshal(job)
-	ioutil.WriteFile(path, b, 0644)
+	if err == nil {
+		ioutil.WriteFile(path, b, 0644)
+	}
 	return err
 }
 
