@@ -1,8 +1,12 @@
 package scheduler
 
 import (
+	"encoding/json"
 	"github.com/mowings/scylla/config"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -13,6 +17,19 @@ func Run() (load_chan chan string, status_chan chan StatusRequest) {
 	status_chan = make(chan StatusRequest)
 	go runSchedule(load_chan, status_chan)
 	return load_chan, status_chan
+}
+
+func saveRunState(run_dir string, jobs *JobList) (err error) {
+	path := filepath.Join(run_dir, "runstate.json")
+	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	var b []byte
+	if b, err = json.Marshal(jobs); err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(path, b, 0644)
+	return err
 }
 
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
@@ -26,6 +43,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				if job.IsTimeForJob() {
 					log.Printf("Time for job: %s\n", name)
 					job.Run(run_report_chan)
+					saveRunState(cur_config.Defaults.RunDir, &jobs)
 				}
 			}
 		case run_report := <-run_report_chan:
@@ -37,7 +55,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			if job.Complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
-			job.Save()
+			saveRunState(cur_config.Defaults.RunDir, &jobs)
 
 		case path := <-load_chan:
 			log.Println("Got config load request.")
@@ -54,13 +72,12 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
 						} else {
 							jobs[name] = new_job
-							new_job.Save()
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
 					}
 				}
-
+				saveRunState(cur_config.Defaults.RunDir, &jobs)
 			}
 		}
 	}

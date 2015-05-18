@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/mowings/scylla/config"
 	"github.com/mowings/scylla/cronsched"
@@ -80,16 +79,6 @@ func New(cfg *config.Config, name string) (*Job, error) {
 	job.Name = name
 	err := job.Update(cfg)
 	return &job, err
-}
-
-func (job *Job) Save() error {
-	path := filepath.Join(job.Defaults.RunDir, job.Name, "job.json")
-	os.MkdirAll(filepath.Dir(path), 0755)
-	b, err := json.Marshal(job)
-	if err == nil {
-		ioutil.WriteFile(path, b, 0644)
-	}
-	return err
 }
 
 func (job *Job) Complete(r *RunData) bool {
