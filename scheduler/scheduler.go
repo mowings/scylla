@@ -19,8 +19,22 @@ func Run() (load_chan chan string, status_chan chan StatusRequest) {
 	return load_chan, status_chan
 }
 
-func saveRunState(run_dir string, jobs *JobList) (err error) {
-	path := filepath.Join(run_dir, "runstate.json")
+func runDir() string {
+	path := os.Getenv("SCYLLA_PATH")
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "./"
+	}
+	if path == "" {
+		path = filepath.Join(cwd, "run")
+	} else {
+		path = filepath.Join(path, "run")
+	}
+	return path
+}
+
+func saveRunState(jobs *JobList) (err error) {
+	path := filepath.Join(runDir(), "runstate.json")
 	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
@@ -32,10 +46,33 @@ func saveRunState(run_dir string, jobs *JobList) (err error) {
 	return err
 }
 
+func loadRunState(jobs *JobList) (err error) {
+	path := filepath.Join(runDir(), "runstate.json")
+	var data []byte
+	if data, err = ioutil.ReadFile(path); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, jobs); err != nil {
+		return err
+	}
+	// Schedule will be unparsed, so parse it for each job
+	for _, job := range *jobs {
+		job.ParseSchedule()
+	}
+	return nil
+}
+
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
+
 	jobs := JobList{}
+	err := loadRunState(&jobs)
+	if err != nil {
+		log.Printf("NOTE: Unable to open jobs state file: %s\n", err.Error())
+		jobs = JobList{}
+	}
 	var cur_config *config.Config
 	run_report_chan := make(chan *RunData)
+
 	for {
 		select {
 		case <-time.After(time.Second * TIMEOUT):
@@ -43,7 +80,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				if job.IsTimeForJob() {
 					log.Printf("Time for job: %s\n", name)
 					job.Run(run_report_chan)
-					saveRunState(cur_config.Defaults.RunDir, &jobs)
+					saveRunState(&jobs)
 				}
 			}
 		case run_report := <-run_report_chan:
@@ -55,7 +92,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			if job.Complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
-			saveRunState(cur_config.Defaults.RunDir, &jobs)
+			saveRunState(&jobs)
 
 		case path := <-load_chan:
 			log.Println("Got config load request.")
@@ -77,7 +114,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 						log.Printf("Updating job: %s\n", name)
 					}
 				}
-				saveRunState(cur_config.Defaults.RunDir, &jobs)
+				saveRunState(&jobs)
 			}
 		}
 	}

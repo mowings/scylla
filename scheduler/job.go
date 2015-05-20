@@ -59,7 +59,7 @@ type Job struct {
 	Name            string
 	Defaults        *config.Defaults
 	JobSpec         *config.JobSpec
-	Schedule        sched.Sched
+	Schedule        sched.Sched `json:"-"`
 	Running         bool
 	RunId           int
 	RunsOutstanding int
@@ -180,9 +180,20 @@ func (job *Job) Update(cfg *config.Config) error {
 	jobspec := cfg.Job[job.Name]
 	job.JobSpec = jobspec
 	job.Defaults = &cfg.Defaults
+	if err := job.ParseSchedule(); err != nil {
+		return err
+	}
+	var t time.Time
+	job.LastChecked = t
+	err := job.UpdatePool(cfg)
+	return err
+}
+
+func (job *Job) ParseSchedule() error {
+	jobspec := job.JobSpec
 	m := rexSched.FindStringSubmatch(jobspec.Schedule)
 	if m == nil {
-		errors.New("Unable to parse schedule: " + jobspec.Schedule)
+		return errors.New("Unable to parse schedule: " + jobspec.Schedule)
 	}
 	var schedule sched.Sched
 	if m[1] == "cron" {
@@ -192,9 +203,6 @@ func (job *Job) Update(cfg *config.Config) error {
 	}
 	job.Schedule = schedule
 	err := schedule.Parse(m[2])
-	var t time.Time
-	job.LastChecked = t
-	err = job.UpdatePool(cfg)
 	return err
 }
 

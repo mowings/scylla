@@ -6,7 +6,6 @@ import (
 	"github.com/mowings/scylla/scheduler"
 	"github.com/mowings/scylla/web"
 	"log"
-
 	"os"
 )
 
