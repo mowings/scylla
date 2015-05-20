@@ -3,7 +3,7 @@ package web
 import (
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
-	"github.com/mowings/scylla/config"
+	"github.com/mowings/scylla/scyd/config"
 	"net/http"
 )
 

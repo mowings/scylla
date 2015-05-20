@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/mowings/scylla/config"
-	"github.com/mowings/scylla/scheduler"
-	"github.com/mowings/scylla/web"
+	"github.com/mowings/scylla/scyd/config"
+	"github.com/mowings/scylla/scyd/scheduler"
+	"github.com/mowings/scylla/scyd/web"
 	"log"
 	"os"
 )

@@ -2,10 +2,10 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/mowings/scylla/config"
-	"github.com/mowings/scylla/cronsched"
-	"github.com/mowings/scylla/sched"
-	"github.com/mowings/scylla/ssh"
+	"github.com/mowings/scylla/scyd/config"
+	"github.com/mowings/scylla/scyd/cronsched"
+	"github.com/mowings/scylla/scyd/sched"
+	"github.com/mowings/scylla/scyd/ssh"
 	"io/ioutil"
 	"log"
 	"os"

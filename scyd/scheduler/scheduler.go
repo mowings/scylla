@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"encoding/json"
-	"github.com/mowings/scylla/config"
+	"github.com/mowings/scylla/scyd/config"
 	"io/ioutil"
 	"log"
 	"os"
