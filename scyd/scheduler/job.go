@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/cronsched"
@@ -77,16 +78,28 @@ type JobList map[string]*Job
 func New(cfg *config.Config, name string) (*Job, error) {
 	job := Job{}
 	job.Name = name
-	err := job.Update(cfg)
+	err := job.update(cfg)
 	return &job, err
 }
 
-func (job *Job) Complete(r *RunData) bool {
+func (job *Job) saveRuns(runs []*RunData) (err error) {
+	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
+	os.MkdirAll(run_dir, 0755)
+	path := filepath.Join(run_dir, "runs.json")
+	var b []byte
+	if b, err = json.Marshal(runs); err == nil {
+		err = ioutil.WriteFile(path, b, 0644)
+	}
+	return err
+}
+
+func (job *Job) complete(r *RunData) bool {
 	job.Runs = append(job.Runs, r)
 	if len(job.Runs) == cap(job.Runs) {
 		job.Running = false
-		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
+		job.saveRuns(job.Runs)
 		job.RunId += 1
+		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
 		for _, run_report := range job.Runs {
 			log.Printf("%s.%d.%s\n", run_report.JobName, run_report.RunId, run_report.Host)
 			for _, command_run_report := range run_report.CommandRuns {
@@ -113,7 +126,7 @@ func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnectio
 	return &c, err
 }
 
-func (job *Job) Run(run_report_chan chan *RunData) {
+func (job *Job) run(run_report_chan chan *RunData) {
 	if job.Running {
 		job.RunsQueued += 1
 		return
@@ -130,7 +143,7 @@ func (job *Job) Run(run_report_chan chan *RunData) {
 	keyfile := job.Defaults.Keyfile
 	connection_timeout := job.Defaults.ConnectTimeout
 	run_timeout := job.JobSpec.RunTimeout
-	run_dir := filepath.Join(job.Defaults.RunDir, job.Name, strconv.Itoa(job.RunId))
+	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
 
 	go func() {
 		os.MkdirAll(run_dir, 0755)
@@ -140,7 +153,7 @@ func (job *Job) Run(run_report_chan chan *RunData) {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
 		} else {
 			for index, report := range reports {
-				command_dir := filepath.Join(run_dir, strconv.Itoa(index))
+				command_dir := filepath.Join(run_dir, host, strconv.Itoa(index))
 				os.MkdirAll(command_dir, 0775)
 				reports[index].StartTime = time.Now()
 				log.Printf("%s.%d - running command \"%s\" on host %s\n", r.JobName, r.RunId, report.CommandSpecified, host)
@@ -164,7 +177,7 @@ func (job *Job) Run(run_report_chan chan *RunData) {
 
 }
 
-func (job *Job) IsTimeForJob() bool {
+func (job *Job) isTimeForJob() bool {
 	now := time.Now()
 	if time.Since(job.LastChecked) > time.Minute {
 		schedule := job.Schedule
@@ -176,20 +189,20 @@ func (job *Job) IsTimeForJob() bool {
 	return false
 }
 
-func (job *Job) Update(cfg *config.Config) error {
+func (job *Job) update(cfg *config.Config) error {
 	jobspec := cfg.Job[job.Name]
 	job.JobSpec = jobspec
 	job.Defaults = &cfg.Defaults
-	if err := job.ParseSchedule(); err != nil {
+	if err := job.parseSchedule(); err != nil {
 		return err
 	}
 	var t time.Time
 	job.LastChecked = t
-	err := job.UpdatePool(cfg)
+	err := job.updatePool(cfg)
 	return err
 }
 
-func (job *Job) ParseSchedule() error {
+func (job *Job) parseSchedule() error {
 	jobspec := job.JobSpec
 	m := rexSched.FindStringSubmatch(jobspec.Schedule)
 	if m == nil {
@@ -206,7 +219,7 @@ func (job *Job) ParseSchedule() error {
 	return err
 }
 
-func (job *Job) UpdatePool(cfg *config.Config) error {
+func (job *Job) updatePool(cfg *config.Config) error {
 	jobspec := job.JobSpec
 	job.PoolMode = ""
 	if jobspec.Host != "" {

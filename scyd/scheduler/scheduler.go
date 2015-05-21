@@ -33,8 +33,8 @@ func runDir() string {
 	return path
 }
 
-func saveRunState(jobs *JobList) (err error) {
-	path := filepath.Join(runDir(), "runstate.json")
+func saveJobState(jobs *JobList) (err error) {
+	path := filepath.Join(runDir(), "jobs.json")
 	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func loadRunState(jobs *JobList) (err error) {
 	}
 	// Schedule will be unparsed, so parse it for each job
 	for _, job := range *jobs {
-		job.ParseSchedule()
+		job.parseSchedule()
 	}
 	return nil
 }
@@ -76,10 +76,10 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 		select {
 		case <-time.After(time.Second * TIMEOUT):
 			for name, job := range jobs {
-				if job.IsTimeForJob() {
+				if job.isTimeForJob() {
 					log.Printf("Time for job: %s\n", name)
-					job.Run(run_report_chan)
-					saveRunState(&jobs)
+					job.run(run_report_chan)
+					saveJobState(&jobs)
 				}
 			}
 		case run_report := <-run_report_chan:
@@ -88,10 +88,12 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				log.Printf("Received run report for unknown job/run id: %s (%d). Discarding\n", run_report.JobName, run_report.RunId)
 				break
 			}
-			if job.Complete(run_report) {
+			if job.complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
+				if err = saveJobState(&jobs); err != nil {
+					log.Printf("ERROR: Unable to save job status: %s\n", err.Error())
+				}
 			}
-			saveRunState(&jobs)
 
 		case path := <-load_chan:
 			log.Println("Got config load request.")
@@ -111,13 +113,13 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
-						jobs[name].Update(cfg)
+						jobs[name].update(cfg)
 						new_jobs[name] = jobs[name]
 					}
 				}
 				jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 				jobs = new_jobs
-				saveRunState(&jobs)
+				saveJobState(&jobs)
 			}
 		}
 	}
