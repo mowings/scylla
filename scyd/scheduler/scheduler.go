@@ -1,9 +1,7 @@
 package scheduler
 
 import (
-	"encoding/json"
 	"github.com/mowings/scylla/scyd/config"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,31 +31,15 @@ func runDir() string {
 	return path
 }
 
-func saveJobState(jobs *JobList) (err error) {
-	path := filepath.Join(runDir(), "jobs.json")
-	if err = os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-	var b []byte
-	if b, err = json.Marshal(jobs); err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(path, b, 0644)
-	return err
-}
-
-func loadRunState(jobs *JobList) (err error) {
-	path := filepath.Join(runDir(), "runstate.json")
-	var data []byte
-	if data, err = ioutil.ReadFile(path); err != nil {
-		return err
-	}
-	if err := json.Unmarshal(data, jobs); err != nil {
-		return err
-	}
-	// Schedule will be unparsed, so parse it for each job
-	for _, job := range *jobs {
-		job.parseSchedule()
+func loadJobs(jobs *JobList) (err error) {
+	files, _ := filepath.Glob(filepath.Join(runDir(), "*.json"))
+	for _, fn := range files {
+		job, err := loadJob(fn)
+		if err != nil {
+			log.Printf("Unable to reload job from %s - %s\n", fn, err.Error())
+		} else {
+			(*jobs)[job.Name] = job
+		}
 	}
 	return nil
 }
@@ -65,7 +47,7 @@ func loadRunState(jobs *JobList) (err error) {
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 
 	jobs := JobList{}
-	err := loadRunState(&jobs)
+	err := loadJobs(&jobs)
 	if err != nil {
 		log.Printf("NOTE: Unable to open jobs state file: %s\n", err.Error())
 		jobs = JobList{}
@@ -79,7 +61,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				if job.isTimeForJob() {
 					log.Printf("Time for job: %s\n", name)
 					job.run(run_report_chan)
-					saveJobState(&jobs)
+					job.save()
 				}
 			}
 		case run_report := <-run_report_chan:
@@ -90,9 +72,6 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			}
 			if job.complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
-				if err = saveJobState(&jobs); err != nil {
-					log.Printf("ERROR: Unable to save job status: %s\n", err.Error())
-				}
 			}
 
 		case path := <-load_chan:
@@ -110,16 +89,24 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
 						} else {
 							new_jobs[name] = new_job
+							new_job.save()
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
 						jobs[name].update(cfg)
+						jobs[name].save()
 						new_jobs[name] = jobs[name]
+					}
+				}
+				// Delete old job state files
+				for name, _ := range jobs {
+					if new_jobs[name] == nil {
+						log.Printf("Removing old job file for %s\n", name)
+						os.Remove(filepath.Join(runDir(), name+".json"))
 					}
 				}
 				jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 				jobs = new_jobs
-				saveJobState(&jobs)
 			}
 		}
 	}

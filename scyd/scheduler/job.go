@@ -82,6 +82,21 @@ func New(cfg *config.Config, name string) (*Job, error) {
 	return &job, err
 }
 
+func loadJob(path string) (job *Job, err error) {
+	var data []byte
+	var new_job Job
+	job = &new_job
+	if data, err = ioutil.ReadFile(path); err != nil {
+		return job, err
+	}
+	if err := json.Unmarshal(data, job); err != nil {
+		return job, err
+	}
+	// Schedule will be unparsed, so parse it for each job
+	err = job.parseSchedule()
+	return job, err
+}
+
 func (job *Job) save() (err error) {
 	path := filepath.Join(runDir(), job.Name+".json")
 	os.MkdirAll(runDir(), 0755)
