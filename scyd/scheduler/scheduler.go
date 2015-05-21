@@ -70,7 +70,6 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 		log.Printf("NOTE: Unable to open jobs state file: %s\n", err.Error())
 		jobs = JobList{}
 	}
-	var cur_config *config.Config
 	run_report_chan := make(chan *RunData)
 
 	for {
@@ -100,20 +99,24 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			if err != nil {
 				log.Printf("Unable to parse %s : %s\n", path, err.Error)
 			} else {
-				cur_config = cfg
-				for name, _ := range cur_config.Job {
+				new_jobs := JobList{}
+				for name, _ := range cfg.Job {
 					if jobs[name] == nil {
 						log.Printf("Adding new job: %s\n", name)
 						new_job, err := New(cfg, name)
 						if err != nil {
 							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
 						} else {
-							jobs[name] = new_job
+							new_jobs[name] = new_job
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
+						jobs[name].Update(cfg)
+						new_jobs[name] = jobs[name]
 					}
 				}
+				jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
+				jobs = new_jobs
 				saveRunState(&jobs)
 			}
 		}

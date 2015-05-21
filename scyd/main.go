@@ -5,9 +5,19 @@ import (
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/scheduler"
 	"github.com/mowings/scylla/scyd/web"
+	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 )
+
+func writePid() {
+	pid := os.Getpid()
+	err := ioutil.WriteFile("/var/run/scylla.pid", []byte(strconv.Itoa(pid)), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func main() {
 	var ctx web.Context
@@ -21,6 +31,7 @@ func main() {
 		log.Fatal("Unable to parse config file: " + err.Error())
 		os.Exit(-1)
 	}
+	writePid()
 	ctx.Config = *cfg
 	web.Run(&ctx)
 }
