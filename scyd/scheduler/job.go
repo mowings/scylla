@@ -82,6 +82,16 @@ func New(cfg *config.Config, name string) (*Job, error) {
 	return &job, err
 }
 
+func (job *Job) save() (err error) {
+	path := filepath.Join(runDir(), job.Name+".json")
+	os.MkdirAll(runDir(), 0755)
+	var b []byte
+	if b, err = json.Marshal(job); err == nil {
+		err = ioutil.WriteFile(path, b, 0644)
+	}
+	return err
+}
+
 func (job *Job) saveRuns(runs []*RunData) (err error) {
 	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
 	os.MkdirAll(run_dir, 0755)
@@ -110,6 +120,7 @@ func (job *Job) complete(r *RunData) bool {
 		if job.PoolIndex >= len(job.Pool) {
 			job.PoolIndex = 0
 		}
+		job.save()
 		return true
 	}
 	return false
