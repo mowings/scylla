@@ -173,11 +173,13 @@ func (job *Job) run(run_report_chan chan *RunData) {
 
 	go func() {
 		os.MkdirAll(run_dir, 0755)
+		log.Printf("Opening connection to: %s (%d)\n", host, connection_timeout)
 		conn, err := openConnection(keyfile, host, connection_timeout)
-		defer conn.Close()
 		if err != nil {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
+			log.Printf("Unable to connect to %s (%s)\n", host, err.Error())
 		} else {
+			defer conn.Close()
 			for index, report := range reports {
 				command_dir := filepath.Join(run_dir, host, strconv.Itoa(index))
 				os.MkdirAll(command_dir, 0775)

@@ -37,7 +37,7 @@ func Run(ctx *Context) {
 	server.Get("/", func() string {
 		return "<h1>Scylla</h1>"
 	})
-	server.Put("/api/v1/config", func(req *http.Request, r render.Render) {
+	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)
 	})
 	writeEndpoint(ctx.Config.Web.Listen)
