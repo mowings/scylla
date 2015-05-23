@@ -23,6 +23,15 @@ func loadConfig(ctx Context) (*config.Config, error) {
 	return cfg, nil
 }
 
+func validateConfig(ctx Context) (err error) {
+	cfg, err := config.New(ctx.CfgPath)
+	if err != nil {
+		return err
+	}
+	err = cfg.Validate()
+	return err
+}
+
 func writeEndpoint(endpoint string) {
 	err := ioutil.WriteFile("/var/run/scylla.endpoint", []byte(endpoint), 0644)
 	if err != nil {
@@ -40,6 +49,10 @@ func Run(ctx *Context) {
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)
 	})
+	server.Get("/api/v1/test", func(req *http.Request, r render.Render) {
+		validateConfig(*ctx)
+	})
+
 	writeEndpoint(ctx.Config.Web.Listen)
 	server.RunOnAddr(ctx.Config.Web.Listen)
 
