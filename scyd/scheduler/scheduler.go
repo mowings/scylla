@@ -81,10 +81,10 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				log.Printf("Unable to parse %s : %s\n", path, err.Error)
 			} else {
 				new_jobs := JobList{}
-				for name, _ := range cfg.Job {
+				for name, job := range cfg.Job {
 					if jobs[name] == nil {
 						log.Printf("Adding new job: %s\n", name)
-						new_job, err := New(cfg, name)
+						new_job, err := New(job)
 						if err != nil {
 							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
 						} else {
@@ -93,7 +93,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 						}
 					} else {
 						log.Printf("Updating job: %s\n", name)
-						jobs[name].update(cfg)
+						jobs[name].update(job)
 						jobs[name].save()
 						new_jobs[name] = jobs[name]
 					}

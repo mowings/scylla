@@ -2,22 +2,15 @@ package scheduler
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/mowings/scylla/scyd/config"
-	"github.com/mowings/scylla/scyd/cronsched"
-	"github.com/mowings/scylla/scyd/sched"
 	"github.com/mowings/scylla/scyd/ssh"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
-
-var rexSched = regexp.MustCompile("^([a-z]+) (.+)")
 
 type RunStatus int
 
@@ -65,15 +58,13 @@ type Job struct {
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int
-	PoolMode        string
 }
 
 type JobList map[string]*Job
 
-func New(cfg *config.Config, name string) (*Job, error) {
+func New(spec *config.JobSpec) (*Job, error) {
 	job := Job{}
-	job.Name = name
-	err := job.update(cfg)
+	err := job.update(spec)
 	return &job, err
 }
 
@@ -88,7 +79,7 @@ func loadJob(path string) (job *Job, err error) {
 		return job, err
 	}
 	// Schedule will be unparsed, so parse it for each job
-	err = job.parseSchedule()
+	err = job.ParseSchedule()
 	return job, err
 }
 
@@ -154,16 +145,21 @@ func (job *Job) run(run_report_chan chan *RunData) {
 	}
 	job.Runs = make([]*RunData, 0, 1)
 	job.Running = true
-	host := qualifyHost(job.Pool[job.PoolIndex], job.Defaults.User, job.Defaults.Port)
-	sudo := job.JobSpec.Sudo
-	reports := make([]CommandRunData, len(job.JobSpec.Command))
+	var host string
+	if job.Host != "" {
+		host = job.Host
+	} else {
+		host = job.PoolInst.Host[job.PoolIndex]
+	}
+	sudo := job.Sudo
+	reports := make([]CommandRunData, len(job.Command))
 	r := RunData{job.Name, job.RunId, Succeeded, host, reports}
-	for index, command := range job.JobSpec.Command {
+	for index, command := range job.Command {
 		reports[index] = CommandRunData{command, "", "", 0, time.Now(), time.Now()}
 	}
-	keyfile := job.Defaults.Keyfile
-	connection_timeout := job.Defaults.ConnectTimeout
-	run_timeout := job.JobSpec.RunTimeout
+	keyfile := job.Keyfile
+	connection_timeout := job.ConnectTimeout
+	run_timeout := job.RunTimeout
 	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
 
 	go func() {
@@ -203,7 +199,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 func (job *Job) isTimeForJob() bool {
 	now := time.Now()
 	if time.Since(job.LastChecked) > time.Minute {
-		schedule := job.Schedule
+		schedule := job.ScheduleInst
 		job.LastChecked = now
 		if schedule.Match(&now) {
 			return true
@@ -212,49 +208,10 @@ func (job *Job) isTimeForJob() bool {
 	return false
 }
 
-func (job *Job) update(cfg *config.Config) error {
-	jobspec := cfg.Job[job.Name]
-	job.JobSpec = jobspec
-	job.Defaults = &cfg.Defaults
-	if err := job.parseSchedule(); err != nil {
-		return err
-	}
+func (job *Job) update(spec *config.JobSpec) error {
+	job.JobSpec = *spec
 	var t time.Time
 	job.LastChecked = t
-	err := job.updatePool(cfg)
-	return err
-}
-
-func (job *Job) parseSchedule() error {
-	jobspec := job.JobSpec
-	m := rexSched.FindStringSubmatch(jobspec.Schedule)
-	if m == nil {
-		return errors.New("Unable to parse schedule: " + jobspec.Schedule)
-	}
-	var schedule sched.Sched
-	if m[1] == "cron" {
-		schedule = &cronsched.ParsedCronSched{}
-	} else {
-		return errors.New("Unknown schedule type: " + jobspec.Schedule)
-	}
-	job.Schedule = schedule
-	err := schedule.Parse(m[2])
-	return err
-}
-
-func (job *Job) updatePool(cfg *config.Config) error {
-	jobspec := job.JobSpec
-	job.PoolMode = ""
-	if jobspec.Host != "" {
-		job.Pool = []string{jobspec.Host}
-	} else {
-		p := strings.Split(jobspec.Pool, " ")
-		job.Pool = cfg.Pool[p[0]].Host
-		if len(p) > 1 {
-			job.PoolMode = p[1]
-		}
-	}
 	job.PoolIndex = 0
-
 	return nil
 }

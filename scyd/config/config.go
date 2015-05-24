@@ -28,7 +28,7 @@ type JobSpec struct {
 	Command        []string
 	Description    string
 	Schedule       string
-	ScheduleInst   sched.Sched
+	ScheduleInst   sched.Sched `json:"-"`
 	Keyfile        string
 	Pass           string
 	Host           string
@@ -75,7 +75,7 @@ func New(fn string) (cfg *Config, err error) {
 		cfg.Defaults.ConnectTimeout = DEFAULT_CONNECT_TIMEOUT
 	}
 	if cfg.Defaults.RunTimeout == 0 {
-		cfg.Defaults.ConnectTimeout = DEFAULT_RUN_TIMEOUT
+		cfg.Defaults.RunTimeout = DEFAULT_RUN_TIMEOUT
 	}
 
 	// Qualify Pool hosts
@@ -88,7 +88,7 @@ func New(fn string) (cfg *Config, err error) {
 	// Parse the schedule data, set defaults
 	for name, job := range cfg.Job {
 		job.Name = name
-		job.ScheduleInst, err = parseScheduleLine(job.Schedule)
+		job.ParseSchedule()
 		if err != nil {
 			return nil, err
 		}
@@ -122,22 +122,22 @@ func New(fn string) (cfg *Config, err error) {
 	return cfg, err
 }
 
-func parseScheduleLine(line string) (sched.Sched, error) {
-	if line == "" {
-		return &sched.NoSchedule{}, nil
+func (job *JobSpec) ParseSchedule() error {
+	if job.Schedule == "" {
+		job.ScheduleInst = &sched.NoSchedule{}
+		return nil
 	}
-	m := sched.RexSched.FindStringSubmatch(line)
+	m := sched.RexSched.FindStringSubmatch(job.Schedule)
 	if m == nil {
-		return nil, errors.New("Unable to parse schedule: " + line)
+		errors.New("Unable to parse schedule: " + job.Schedule)
 	}
-	var schedule sched.Sched
 	if m[1] == "cron" {
-		schedule = &cronsched.ParsedCronSched{}
+		job.ScheduleInst = &cronsched.ParsedCronSched{}
 	} else {
-		return schedule, errors.New("Unknown schedule type: " + line)
+		return errors.New("Unknown schedule type: " + job.Schedule)
 	}
-	err := schedule.Parse(m[2])
-	return schedule, err
+	err := job.ScheduleInst.Parse(m[2])
+	return err
 }
 
 func (cfg *Config) Validate() (err error) {
