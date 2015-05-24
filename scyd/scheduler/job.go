@@ -57,20 +57,15 @@ type StatusRequest struct {
 
 //
 type Job struct {
-	Name            string
-	Defaults        *config.Defaults
-	JobSpec         *config.JobSpec
-	Schedule        sched.Sched `json:"-"`
+	config.JobSpec
 	Running         bool
 	RunId           int
 	RunsOutstanding int
 	Runs            []*RunData
 	RunsQueued      int
 	LastChecked     time.Time
-	Pool            []string
 	PoolIndex       int
 	PoolMode        string
-	ConnectionCache map[string]*ssh.SshConnection
 }
 
 type JobList map[string]*Job

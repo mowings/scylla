@@ -18,6 +18,7 @@ func TestParse(t *testing.T) {
 		log.Println("Jobs: ")
 		for k, v := range cfg.Job {
 			log.Printf("%s ==> %+v\n", k, *v)
+			log.Printf("       %s (%s)\n", v.ScheduleInst.Type(), v.ScheduleInst.Unparsed())
 		}
 	}
 }

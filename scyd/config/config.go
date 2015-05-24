@@ -2,9 +2,20 @@ package config
 
 import (
 	"code.google.com/p/gcfg"
+	"errors"
+	"fmt"
+	"github.com/mowings/scylla/scyd/cronsched"
+	"github.com/mowings/scylla/scyd/sched"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const DEFAULT_RUN_DIR = "/var/scylla"
+const DEFAULT_CONNECT_TIMEOUT = 20
+const DEFAULT_RUN_TIMEOUT = 86400
+
+var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>[^:]+)(:(?P<port>\d+))?`)
 
 type PoolSpec struct {
 	Name string
@@ -13,23 +24,27 @@ type PoolSpec struct {
 }
 
 type JobSpec struct {
+	Name           string
 	Command        []string
 	Description    string
 	Schedule       string
+	ScheduleInst   sched.Sched
+	Keyfile        string
+	Pass           string
 	Host           string
 	Pool           string
+	PoolMode       string
+	PoolInst       *PoolSpec
 	Upload         string
 	Sudo           bool
 	SudoCommand    string `gcfg:"sudo-command"`
-	Manual         bool
-	ConnectTimeout int `gcfg:"connect-timeout"`
-	RunTimeout     int `gcfg:"run-timeout"`
+	ConnectTimeout int    `gcfg:"connect-timeout"`
+	RunTimeout     int    `gcfg:"run-timeout"`
 }
 
 type Defaults struct {
-	RunDir         string `gcfg:"run-dir"`
 	Keyfile        string
-	Password       string
+	Pass           string
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	RunTimeout     int    `gcfg:"run-timeout"`
 	SudoCommand    string `gcfg:"sudo-command"`
@@ -56,14 +71,109 @@ func New(fn string) (cfg *Config, err error) {
 	if err == nil {
 		err = config.Validate()
 	}
-	if cfg.Defaults.RunDir == "" {
-		cfg.Defaults.RunDir = DEFAULT_RUN_DIR
+	if cfg.Defaults.ConnectTimeout == 0 {
+		cfg.Defaults.ConnectTimeout = DEFAULT_CONNECT_TIMEOUT
+	}
+	if cfg.Defaults.RunTimeout == 0 {
+		cfg.Defaults.ConnectTimeout = DEFAULT_RUN_TIMEOUT
+	}
+
+	// Qualify Pool hosts
+	for _, pool := range cfg.Pool {
+		for idx, host := range pool.Host {
+			pool.Host[idx] = qualifyHost(host, cfg.Defaults.User, cfg.Defaults.Port)
+		}
+	}
+
+	// Parse the schedule data, set defaults
+	for name, job := range cfg.Job {
+		job.Name = name
+		job.ScheduleInst, err = parseScheduleLine(job.Schedule)
+		if err != nil {
+			return nil, err
+		}
+		if job.ConnectTimeout == 0 {
+			job.ConnectTimeout = cfg.Defaults.ConnectTimeout
+		}
+		if job.RunTimeout == 0 {
+			job.RunTimeout = cfg.Defaults.RunTimeout
+		}
+		if job.Keyfile == "" {
+			job.Keyfile = cfg.Defaults.Keyfile
+		}
+		if job.Pass == "" {
+			job.Pass = cfg.Defaults.Pass
+		}
+		if job.Host != "" {
+			job.Host = qualifyHost(job.Host, cfg.Defaults.User, cfg.Defaults.Port)
+		}
+		if job.Pool != "" {
+			p := strings.Split(job.Pool, " ")
+			if len(p) > 1 {
+				job.PoolMode = p[1]
+			}
+			job.PoolInst = cfg.Pool[p[0]]
+			if job.PoolInst == nil {
+				return nil, errors.New(fmt.Sprintf("Bad pool %s specified by job %s", name, p[0]))
+			}
+		}
 	}
 
 	return cfg, err
 }
 
+func parseScheduleLine(line string) (sched.Sched, error) {
+	if line == "" {
+		return &sched.NoSchedule{}, nil
+	}
+	m := sched.RexSched.FindStringSubmatch(line)
+	if m == nil {
+		return nil, errors.New("Unable to parse schedule: " + line)
+	}
+	var schedule sched.Sched
+	if m[1] == "cron" {
+		schedule = &cronsched.ParsedCronSched{}
+	} else {
+		return schedule, errors.New("Unknown schedule type: " + line)
+	}
+	err := schedule.Parse(m[2])
+	return schedule, err
+}
+
 func (cfg *Config) Validate() (err error) {
 
 	return err
+}
+
+func qualifyHost(unqualified string, default_user string, default_port int) (qualified string) {
+	m := FindNamedStringCaptures(host_parse, unqualified)
+
+	host := m["hostname"]
+	user := m["user"]
+	port := m["port"]
+
+	if user == "" {
+		user = default_user
+	}
+	if port == "" {
+		port = strconv.Itoa(default_port)
+	}
+
+	return fmt.Sprintf("%s@%s:%s", user, host, port)
+
+}
+
+func FindNamedStringCaptures(re *regexp.Regexp, x string) map[string]string {
+	matches := make(map[string]string)
+	parts := re.FindStringSubmatch(x)
+	if parts == nil {
+		return nil
+	}
+
+	for index, key := range host_parse.SubexpNames() {
+		if key != "" {
+			matches[key] = parts[index]
+		}
+	}
+	return matches
 }
