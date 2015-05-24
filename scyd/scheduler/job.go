@@ -39,6 +39,11 @@ type RunData struct {
 	CommandRuns []CommandRunData
 }
 
+type RunHistory struct {
+	Id   int
+	Runs []*RunData
+}
+
 type StatusResponse struct {
 	Runs []RunData
 }
@@ -48,7 +53,7 @@ type StatusRequest struct {
 	Chan chan StatusResponse
 }
 
-//
+// Job runtime
 type Job struct {
 	config.JobSpec
 	Running         bool
@@ -58,6 +63,7 @@ type Job struct {
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int
+	RunHistory      []RunHistory `json: "-"`
 }
 
 type JobList map[string]*Job
@@ -83,6 +89,14 @@ func loadJob(path string) (job *Job, err error) {
 	return job, err
 }
 
+func (job *Job) update(spec *config.JobSpec) error {
+	job.JobSpec = *spec
+	var t time.Time
+	job.LastChecked = t
+	job.PoolIndex = 0
+	return nil
+}
+
 func (job *Job) save() (err error) {
 	path := filepath.Join(runDir(), job.Name+".json")
 	os.MkdirAll(runDir(), 0755)
@@ -102,6 +116,18 @@ func (job *Job) saveRuns(runs []*RunData) (err error) {
 		err = ioutil.WriteFile(path, b, 0644)
 	}
 	return err
+}
+
+func (job *Job) isTimeForJob() bool {
+	now := time.Now()
+	if time.Since(job.LastChecked) > time.Minute {
+		schedule := job.ScheduleInst
+		job.LastChecked = now
+		if schedule.Match(&now) {
+			return true
+		}
+	}
+	return false
 }
 
 func (job *Job) complete(r *RunData) bool {
@@ -194,24 +220,4 @@ func (job *Job) run(run_report_chan chan *RunData) {
 		run_report_chan <- &r
 	}()
 
-}
-
-func (job *Job) isTimeForJob() bool {
-	now := time.Now()
-	if time.Since(job.LastChecked) > time.Minute {
-		schedule := job.ScheduleInst
-		job.LastChecked = now
-		if schedule.Match(&now) {
-			return true
-		}
-	}
-	return false
-}
-
-func (job *Job) update(spec *config.JobSpec) error {
-	job.JobSpec = *spec
-	var t time.Time
-	job.LastChecked = t
-	job.PoolIndex = 0
-	return nil
 }
