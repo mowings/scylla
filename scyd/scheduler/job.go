@@ -22,9 +22,7 @@ const (
 	Abandoned
 )
 
-type StatusResponse struct {
-	Runs []RunData
-}
+type StatusResponse interface{}
 
 type StatusRequest struct {
 	Name string
@@ -37,7 +35,7 @@ type Job struct {
 	Running         bool
 	RunId           int
 	RunsOutstanding int
-	Runs            []*RunData
+	Runs            []*RunData `json:"-"`
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int

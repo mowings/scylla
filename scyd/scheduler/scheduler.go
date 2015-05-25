@@ -5,10 +5,17 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
 const TIMEOUT = 10
+
+type JobsByName []Job
+
+func (slice JobsByName) Len() int           { return len(slice) }
+func (slice JobsByName) Less(i, j int) bool { return slice[i].Name < slice[j].Name }
+func (slice JobsByName) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
 
 func Run() (load_chan chan string, status_chan chan StatusRequest) {
 	load_chan = make(chan string)
@@ -44,8 +51,18 @@ func loadJobs(jobs *JobList) (err error) {
 	return nil
 }
 
-func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
+func reportJobList(jobs *JobList, rchan chan StatusResponse) {
+	data := make([]Job, len(*jobs))
+	idx := 0
+	for _, job := range *jobs {
+		data[idx] = *job // Make a copy
+	}
+	// Sort the jobs before we return them
+	sort.Sort(JobsByName(data))
+	rchan <- &data
+}
 
+func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 	jobs := JobList{}
 	err := loadJobs(&jobs)
 	if err != nil {
@@ -63,6 +80,11 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 					job.run(run_report_chan)
 					job.save()
 				}
+			}
+		case status_req := <-status_chan:
+			if status_req.Name == "" { // Job list
+				log.Println("Job list requested")
+				reportJobList(&jobs, status_req.Chan)
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]
