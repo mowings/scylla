@@ -14,6 +14,7 @@ import (
 const DEFAULT_RUN_DIR = "/var/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
 const DEFAULT_RUN_TIMEOUT = 86400
+const DEFAULT_MAX_RUN_HISTORY = 100
 
 var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>[^:]+)(:(?P<port>\d+))?`)
 
@@ -40,6 +41,7 @@ type JobSpec struct {
 	SudoCommand    string `gcfg:"sudo-command"`
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	RunTimeout     int    `gcfg:"run-timeout"`
+	MaxRunHistory  int
 }
 
 type Defaults struct {
@@ -51,6 +53,7 @@ type Defaults struct {
 	User           string
 	Port           int
 	OnFailure      string `gcfg:"on-failure"`
+	MaxRunHistory  int
 }
 
 type Web struct {
@@ -77,6 +80,9 @@ func New(fn string) (cfg *Config, err error) {
 	if cfg.Defaults.RunTimeout == 0 {
 		cfg.Defaults.RunTimeout = DEFAULT_RUN_TIMEOUT
 	}
+	if cfg.Defaults.MaxRunHistory == 0 {
+		cfg.Defaults.MaxRunHistory = DEFAULT_MAX_RUN_HISTORY
+	}
 
 	// Qualify Pool hosts
 	for _, pool := range cfg.Pool {
@@ -97,6 +103,9 @@ func New(fn string) (cfg *Config, err error) {
 		}
 		if job.RunTimeout == 0 {
 			job.RunTimeout = cfg.Defaults.RunTimeout
+		}
+		if job.MaxRunHistory == 0 {
+			job.MaxRunHistory = cfg.Defaults.MaxRunHistory
 		}
 		if job.Keyfile == "" {
 			job.Keyfile = cfg.Defaults.Keyfile

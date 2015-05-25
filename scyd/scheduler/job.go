@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -20,29 +21,6 @@ const (
 	Waiting
 	Abandoned
 )
-
-type CommandRunData struct {
-	CommandSpecified string
-	CommandRun       string
-	Error            string
-	StatusCode       int
-	StartTime        time.Time
-	EndTime          time.Time
-}
-
-// Message -- run status
-type RunData struct {
-	JobName     string
-	RunId       int
-	Status      RunStatus
-	Host        string
-	CommandRuns []CommandRunData
-}
-
-type RunHistory struct {
-	Id   int
-	Runs []*RunData
-}
 
 type StatusResponse struct {
 	Runs []RunData
@@ -63,7 +41,7 @@ type Job struct {
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int
-	RunHistory      []RunHistory `json: "-"`
+	History         JobHistory `json:"-"`
 }
 
 type JobList map[string]*Job
@@ -86,6 +64,30 @@ func loadJob(path string) (job *Job, err error) {
 	}
 	// Schedule will be unparsed, so parse it for each job
 	err = job.ParseSchedule()
+	if err != nil {
+		return job, err
+	}
+	lower_bound := job.RunId - job.MaxRunHistory
+	job.History = make(JobHistory, 0, 10)
+	// Load up job history. Ignore entries earlier than Runid - MaxHistory
+	run_path := filepath.Join(runDir(), job.Name, "*")
+	run_dirs, _ := filepath.Glob(run_path)
+	for _, rd := range run_dirs {
+		_, subdir := filepath.Split(rd)
+		id, cvt_err := strconv.Atoi(subdir)
+		if cvt_err == nil && id >= lower_bound {
+			runs := RunHistory{RunId: id}
+			data, err = ioutil.ReadFile(filepath.Join(rd, "runs.json"))
+			if err == nil {
+				if err := json.Unmarshal(data, &runs.Runs); err == nil {
+					job.History = append(job.History, runs)
+				} else {
+					log.Printf("Unable to marshal run: %s\n", err.Error())
+				}
+			}
+		}
+	}
+	sort.Sort(sort.Reverse(job.History))
 	return job, err
 }
 
@@ -135,6 +137,8 @@ func (job *Job) complete(r *RunData) bool {
 	if len(job.Runs) == cap(job.Runs) {
 		job.Running = false
 		job.saveRuns(job.Runs)
+		rh := RunHistory{RunId: job.RunId, Runs: job.Runs}
+		job.History = append([]RunHistory{rh}, job.History...)
 		job.RunId += 1
 		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
 		for _, run_report := range job.Runs {
