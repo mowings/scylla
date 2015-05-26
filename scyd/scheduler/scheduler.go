@@ -20,7 +20,7 @@ type JobReport struct {
 type JobReportWithHistory struct {
 	Job
 	DetailURI string
-	Runs      JobHistory
+	Runs      []RunHistoryReport
 }
 
 type JobsByName []JobReport
@@ -80,8 +80,10 @@ func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
 		rchan <- fmt.Sprintf("Job \"%s\" not found.", name)
 		return
 	}
-	j := JobReportWithHistory{Job: *job, Runs: make(JobHistory, len(job.History))}
-	copy(j.Runs, job.History)
+	j := JobReportWithHistory{Job: *job, Runs: make([]RunHistoryReport, len(job.History))}
+	for i, run := range job.History {
+		j.Runs[i] = run.Report(true)
+	}
 	rchan <- &j
 }
 

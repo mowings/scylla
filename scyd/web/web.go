@@ -53,6 +53,9 @@ func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Rende
 		}
 	} else if job_detail, found := resp.(*scheduler.JobReportWithHistory); found == true {
 		job_detail.DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job_detail.Name)
+		for i, _ := range job_detail.Runs {
+			job_detail.Runs[i].DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s/%d", proto, req.Host, job_detail.Name, job_detail.Runs[i].RunId)
+		}
 	}
 
 	r.JSON(code, resp)
