@@ -25,18 +25,17 @@ type PoolSpec struct {
 }
 
 type JobSpec struct {
-	Name         string
-	Command      []string
-	Description  string
-	Schedule     string
-	ScheduleInst sched.Sched `json:"-"`
-	Keyfile      string
-	Pass         string
-	Host         string
-	Pool         string
-	PoolMode     string
-	PoolInst     *PoolSpec `json:"-"`
-
+	Name           string
+	Command        []string
+	Description    string
+	Schedule       string
+	ScheduleInst   sched.Sched `json:"-"`
+	Keyfile        string
+	Pass           string
+	Host           string
+	Pool           string
+	PoolMode       string
+	PoolInst       *PoolSpec `json:"-"`
 	Upload         string
 	Sudo           bool
 	SudoCommand    string `gcfg:"sudo-command"`

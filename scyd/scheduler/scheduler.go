@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"github.com/mowings/scylla/scyd/config"
 	"log"
 	"os"
@@ -14,6 +15,12 @@ const TIMEOUT = 10
 type JobReport struct {
 	Job
 	DetailURI string
+}
+
+type JobReportWithHistory struct {
+	Job
+	DetailURI string
+	Runs      JobHistory
 }
 
 type JobsByName []JobReport
@@ -67,6 +74,17 @@ func reportJobList(jobs *JobList, rchan chan StatusResponse) {
 	rchan <- &data
 }
 
+func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
+	job := (*jobs)[name]
+	if job == nil {
+		rchan <- fmt.Sprintf("Job \"%s\" not found.", name)
+		return
+	}
+	j := JobReportWithHistory{Job: *job, Runs: make(JobHistory, len(job.History))}
+	copy(j.Runs, job.History)
+	rchan <- &j
+}
+
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 	jobs := JobList{}
 	err := loadJobs(&jobs)
@@ -90,6 +108,8 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			if status_req.Name == "" { // Job list
 				log.Println("Job list requested")
 				reportJobList(&jobs, status_req.Chan)
+			} else {
+				reportJobDetail(&jobs, status_req.Name, status_req.Chan)
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]

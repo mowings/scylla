@@ -34,7 +34,8 @@ func validateConfig(ctx Context) (err error) {
 
 func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Render) {
 	resp_chan := make(chan scheduler.StatusResponse)
-	status_req := scheduler.StatusRequest{Name: "", Chan: resp_chan}
+	log.Println(name)
+	status_req := scheduler.StatusRequest{Name: name, Chan: resp_chan}
 	ctx.StatusChan <- status_req
 	resp := <-resp_chan
 	code := 200
@@ -50,6 +51,8 @@ func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Rende
 		for i, job := range *job_list { // Fill in detail link
 			(*job_list)[i].DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job.Name)
 		}
+	} else if job_detail, found := resp.(*scheduler.JobReportWithHistory); found == true {
+		job_detail.DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job_detail.Name)
 	}
 
 	r.JSON(code, resp)
@@ -77,6 +80,9 @@ func Run(ctx *Context) {
 	})
 	server.Get("/api/v1/jobs", func(req *http.Request, r render.Render) {
 		getJobInfoJson(ctx, "", req, r)
+	})
+	server.Get("/api/v1/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
+		getJobInfoJson(ctx, params["name"], req, r)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)
