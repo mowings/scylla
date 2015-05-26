@@ -107,11 +107,11 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 				}
 			}
 		case status_req := <-status_chan:
-			if status_req.Name == "" { // Job list
-				log.Println("Job list requested")
+			switch len(status_req.Object) {
+			case 0:
 				reportJobList(&jobs, status_req.Chan)
-			} else {
-				reportJobDetail(&jobs, status_req.Name, status_req.Chan)
+			case 1:
+				reportJobDetail(&jobs, status_req.Object[0], status_req.Chan)
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]

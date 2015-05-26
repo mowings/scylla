@@ -25,8 +25,8 @@ const (
 type StatusResponse interface{}
 
 type StatusRequest struct {
-	Name string
-	Chan chan StatusResponse
+	Object []string
+	Chan   chan StatusResponse
 }
 
 // Job runtime

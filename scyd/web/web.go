@@ -40,10 +40,9 @@ func qualifyURL(path string, req *http.Request) string {
 	return fmt.Sprintf("%s://%s%s", proto, req.Host, path)
 }
 
-func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Render) {
+func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {
 	resp_chan := make(chan scheduler.StatusResponse)
-	log.Println(name)
-	status_req := scheduler.StatusRequest{Name: name, Chan: resp_chan}
+	status_req := scheduler.StatusRequest{Object: parts, Chan: resp_chan}
 	ctx.StatusChan <- status_req
 	resp := <-resp_chan
 	code := 200
@@ -90,10 +89,10 @@ func Run(ctx *Context) {
 		validateConfig(*ctx)
 	})
 	server.Get("/api/v1/jobs", func(req *http.Request, r render.Render) {
-		getJobInfoJson(ctx, "", req, r)
+		getJobInfoJson(ctx, []string{}, req, r)
 	})
 	server.Get("/api/v1/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
-		getJobInfoJson(ctx, params["name"], req, r)
+		getJobInfoJson(ctx, []string{params["name"]}, req, r)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)
