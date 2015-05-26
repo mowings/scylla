@@ -32,6 +32,14 @@ func validateConfig(ctx Context) (err error) {
 	return err
 }
 
+func qualifyURL(path string, req *http.Request) string {
+	proto := req.Header.Get("X-Forwarded-Proto")
+	if proto == "" {
+		proto = "http"
+	}
+	return fmt.Sprintf("%s://%s%s", proto, req.Host, path)
+}
+
 func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Render) {
 	resp_chan := make(chan scheduler.StatusResponse)
 	log.Println(name)
@@ -49,12 +57,12 @@ func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Rende
 	} else if job_list, found := resp.(*[]scheduler.JobReport); found == true {
 		log.Println("Job report")
 		for i, job := range *job_list { // Fill in detail link
-			(*job_list)[i].DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job.Name)
+			(*job_list)[i].DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s", job.Name), req)
 		}
 	} else if job_detail, found := resp.(*scheduler.JobReportWithHistory); found == true {
 		job_detail.DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job_detail.Name)
 		for i, _ := range job_detail.Runs {
-			job_detail.Runs[i].DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s/%d", proto, req.Host, job_detail.Name, job_detail.Runs[i].RunId)
+			job_detail.Runs[i].DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d", job_detail.Name, job_detail.Runs[i].RunId), req)
 		}
 	}
 

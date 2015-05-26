@@ -29,8 +29,8 @@ type RunHistory struct {
 
 type CommandRunReport struct {
 	CommandRunData
-	StdOutURI string
-	StdErrURI string
+	StdOutURI string `json:",omitempty"`
+	StdErrURI string `json:",omitempty"`
 }
 
 type HostRunReport struct {
