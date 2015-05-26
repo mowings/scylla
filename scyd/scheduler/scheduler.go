@@ -11,7 +11,12 @@ import (
 
 const TIMEOUT = 10
 
-type JobsByName []Job
+type JobReport struct {
+	Job
+	DetailURI string
+}
+
+type JobsByName []JobReport
 
 func (slice JobsByName) Len() int           { return len(slice) }
 func (slice JobsByName) Less(i, j int) bool { return slice[i].Name < slice[j].Name }
@@ -52,10 +57,10 @@ func loadJobs(jobs *JobList) (err error) {
 }
 
 func reportJobList(jobs *JobList, rchan chan StatusResponse) {
-	data := make([]Job, len(*jobs))
+	data := make([]JobReport, len(*jobs))
 	idx := 0
 	for _, job := range *jobs {
-		data[idx] = *job // Make a copy
+		data[idx].Job = *job // Make a copy
 	}
 	// Sort the jobs before we return them
 	sort.Sort(JobsByName(data))

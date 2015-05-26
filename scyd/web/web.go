@@ -1,11 +1,13 @@
 package web
 
 import (
+	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/scheduler"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -30,12 +32,27 @@ func validateConfig(ctx Context) (err error) {
 	return err
 }
 
-func getJobListJson(ctx *Context, req *http.Request, r render.Render) {
+func getJobInfoJson(ctx *Context, name string, req *http.Request, r render.Render) {
 	resp_chan := make(chan scheduler.StatusResponse)
 	status_req := scheduler.StatusRequest{Name: "", Chan: resp_chan}
 	ctx.StatusChan <- status_req
 	resp := <-resp_chan
-	r.JSON(200, resp)
+	code := 200
+	proto := req.Header.Get("X-Forwarded-Proto")
+	if proto == "" {
+		proto = "http"
+	}
+
+	if _, found := resp.(string); found == true {
+		code = 404
+	} else if job_list, found := resp.(*[]scheduler.JobReport); found == true {
+		log.Println("Job report")
+		for i, job := range *job_list { // Fill in detail link
+			(*job_list)[i].DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job.Name)
+		}
+	}
+
+	r.JSON(code, resp)
 }
 
 func writeEndpoint(endpoint string) {
@@ -58,8 +75,8 @@ func Run(ctx *Context) {
 	server.Get("/api/v1/test", func(req *http.Request, r render.Render) {
 		validateConfig(*ctx)
 	})
-	server.Get("/api/v1/jobs.json", func(req *http.Request, r render.Render) {
-		getJobListJson(ctx, req, r)
+	server.Get("/api/v1/jobs", func(req *http.Request, r render.Render) {
+		getJobInfoJson(ctx, "", req, r)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)
