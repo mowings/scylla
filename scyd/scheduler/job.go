@@ -156,6 +156,19 @@ func (job *Job) complete(r *RunData) bool {
 
 }
 
+func (job *Job) getRun(id string) *RunHistory {
+	nid, err := strconv.Atoi(id)
+	if err != nil {
+		return nil
+	}
+	for _, rh := range job.History {
+		if rh.RunId == nid {
+			return &rh
+		}
+	}
+	return nil
+}
+
 func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnection, error) {
 	auths := ssh.MakeKeyring([]string{keyfile})
 	var c ssh.SshConnection

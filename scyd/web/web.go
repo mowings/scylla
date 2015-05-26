@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"reflect"
 )
 
 type Context struct {
@@ -50,7 +51,7 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 	if proto == "" {
 		proto = "http"
 	}
-
+	log.Printf("Scheduler response: %s\n", reflect.TypeOf(resp).String())
 	if _, found := resp.(string); found == true {
 		code = 404
 	} else if job_list, found := resp.(*[]scheduler.JobReport); found == true {
@@ -62,6 +63,14 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 		job_detail.DetailURI = fmt.Sprintf("%s://%s/api/v1/jobs/%s", proto, req.Host, job_detail.Name)
 		for i, _ := range job_detail.Runs {
 			job_detail.Runs[i].DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d", job_detail.Name, job_detail.Runs[i].RunId), req)
+		}
+	} else if run, found := resp.(*scheduler.RunHistoryReport); found == true {
+		run.DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d", run.JobName, run.RunId), req)
+		for i, hr := range run.HostRuns {
+			for j, _ := range hr.CommandRuns {
+				run.HostRuns[i].CommandRuns[j].StdOutURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stdout", run.JobName, run.RunId, hr.Host, j), req)
+				run.HostRuns[i].CommandRuns[j].StdErrURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stderr", run.JobName, run.RunId, hr.Host, j), req)
+			}
 		}
 	}
 
@@ -93,6 +102,9 @@ func Run(ctx *Context) {
 	})
 	server.Get("/api/v1/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
 		getJobInfoJson(ctx, []string{params["name"]}, req, r)
+	})
+	server.Get("/api/v1/jobs/:name/:id", func(params martini.Params, req *http.Request, r render.Render) {
+		getJobInfoJson(ctx, []string{params["name"], params["id"]}, req, r)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)

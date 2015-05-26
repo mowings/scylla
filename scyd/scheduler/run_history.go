@@ -43,7 +43,7 @@ type RunHistoryReport struct {
 	RunId     int
 	JobName   string `json:",omitempty"`
 	HostRuns  []HostRunReport
-	DetailURI string
+	DetailURI string `json:",omitempty"`
 }
 
 type JobHistory []RunHistory
@@ -61,7 +61,7 @@ func (slice JobHistory) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (rh *RunHistory) Report(omitjobname bool) RunHistoryReport {
+func (rh *RunHistory) Report(omitjobname bool) *RunHistoryReport {
 	report := RunHistoryReport{RunId: rh.RunId, HostRuns: make([]HostRunReport, len(rh.Runs))}
 	if !omitjobname {
 		report.JobName = rh.Runs[0].JobName
@@ -74,5 +74,5 @@ func (rh *RunHistory) Report(omitjobname bool) RunHistoryReport {
 			report.HostRuns[i].CommandRuns[j] = CommandRunReport{CommandRunData: command_run}
 		}
 	}
-	return report
+	return &report
 }
