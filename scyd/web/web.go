@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"reflect"
 )
 
@@ -51,6 +52,8 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 	if proto == "" {
 		proto = "http"
 	}
+
+	// Annotate with detail URI references
 	log.Printf("Scheduler response: %s\n", reflect.TypeOf(resp).String())
 	if _, found := resp.(string); found == true {
 		code = 404
@@ -68,8 +71,8 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 		run.DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d", run.JobName, run.RunId), req)
 		for i, hr := range run.HostRuns {
 			for j, _ := range hr.CommandRuns {
-				run.HostRuns[i].CommandRuns[j].StdOutURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stdout", run.JobName, run.RunId, hr.Host, j), req)
-				run.HostRuns[i].CommandRuns[j].StdErrURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stderr", run.JobName, run.RunId, hr.Host, j), req)
+				run.HostRuns[i].CommandRuns[j].StdOutURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stdout", run.JobName, run.RunId, url.QueryEscape(hr.Host), j), req)
+				run.HostRuns[i].CommandRuns[j].StdErrURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stderr", run.JobName, run.RunId, url.QueryEscape(hr.Host), j), req)
 			}
 		}
 	}
