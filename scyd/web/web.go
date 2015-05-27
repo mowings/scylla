@@ -3,14 +3,19 @@ package web
 import (
 	"fmt"
 	"github.com/go-martini/martini"
+	"github.com/martini-contrib/gzip"
 	"github.com/martini-contrib/render"
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/scheduler"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 type Context struct {
@@ -80,6 +85,25 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 	r.JSON(code, resp)
 }
 
+func sanitize(path string) string {
+	clean := strings.Replace(path, "..", "", -1)
+	return clean
+}
+
+func getJobOutput(jobname, jobid, host, command_id, fn string, res http.ResponseWriter) {
+	res.Header().Set("Content-Type", "text/plain")
+	path := sanitize(filepath.Join(config.RunDir(), jobname, jobid, host, command_id, fn))
+	log.Println(path)
+	r, err := os.Open(path)
+	if err == nil {
+		defer r.Close()
+		_, err = io.Copy(res, r)
+	} else {
+		http.Error(res, "Not Found", http.StatusNotFound)
+	}
+
+}
+
 func writeEndpoint(endpoint string) {
 	err := ioutil.WriteFile("/var/run/scylla.endpoint", []byte(endpoint), 0644)
 	if err != nil {
@@ -90,6 +114,7 @@ func writeEndpoint(endpoint string) {
 func Run(ctx *Context) {
 	loadConfig(*ctx) // Force a load on startup
 	server := martini.Classic()
+	server.Use(gzip.All())
 	server.Use(render.Renderer())
 	server.Get("/", func() string {
 		return "<h1>Scylla</h1>"
@@ -108,6 +133,9 @@ func Run(ctx *Context) {
 	})
 	server.Get("/api/v1/jobs/:name/:id", func(params martini.Params, req *http.Request, r render.Render) {
 		getJobInfoJson(ctx, []string{params["name"], params["id"]}, req, r)
+	})
+	server.Get("/api/v1/jobs/:name/:id/:host/:command_id/:fn", func(params martini.Params, res http.ResponseWriter) {
+		getJobOutput(params["name"], params["id"], params["host"], params["command_id"], params["fn"], res)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)

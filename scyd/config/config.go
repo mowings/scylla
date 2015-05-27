@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/mowings/scylla/scyd/cronsched"
 	"github.com/mowings/scylla/scyd/sched"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -185,4 +187,18 @@ func FindNamedStringCaptures(re *regexp.Regexp, x string) map[string]string {
 		}
 	}
 	return matches
+}
+
+func RunDir() string {
+	path := os.Getenv("SCYLLA_PATH")
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "./"
+	}
+	if path == "" {
+		path = filepath.Join(cwd, "run")
+	} else {
+		path = filepath.Join(path, "run")
+	}
+	return path
 }
