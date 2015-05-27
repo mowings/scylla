@@ -46,7 +46,7 @@ func qualifyURL(path string, req *http.Request) string {
 	return fmt.Sprintf("%s://%s%s", proto, req.Host, path)
 }
 
-func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {
+func getJobInfo(ctx *Context, parts []string, req *http.Request, r render.Render) (int, scheduler.StatusResponse) {
 	resp_chan := make(chan scheduler.StatusResponse)
 	status_req := scheduler.StatusRequest{Object: parts, Chan: resp_chan}
 	ctx.StatusChan <- status_req
@@ -80,7 +80,11 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 			}
 		}
 	}
+	return code, resp
+}
 
+func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {
+	code, resp := getJobInfo(ctx, parts, req, r)
 	r.JSON(code, resp)
 }
 
@@ -114,9 +118,15 @@ func Run(ctx *Context) {
 	loadConfig(*ctx) // Force a load on startup
 	server := martini.Classic()
 	server.Use(gzip.All())
-	server.Use(render.Renderer())
-	server.Get("/", func() string {
-		return "<h1>Scylla</h1>"
+	server.Use(render.Renderer(render.Options{
+		Layout: "layout",
+	}))
+
+	server.Get("/", func(r render.Render) {
+		r.Redirect("/jobs", 302)
+	})
+	server.Get("/jobs", func(r render.Render) {
+		r.HTML(200, "jobs", "jeremy")
 	})
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)
