@@ -19,6 +19,7 @@ type RunData struct {
 	RunId       int
 	Status      RunStatus
 	Host        string
+	HostId      int
 	CommandRuns []CommandRunData
 }
 
@@ -36,6 +37,7 @@ type CommandRunReport struct {
 type HostRunReport struct {
 	Status      RunStatus
 	Host        string
+	HostId      int
 	CommandRuns []CommandRunReport
 }
 
@@ -69,6 +71,7 @@ func (rh *RunHistory) Report(omitjobname bool) *RunHistoryReport {
 	for i, run := range rh.Runs {
 		report.HostRuns[i].Status = run.Status
 		report.HostRuns[i].Host = run.Host
+		report.HostRuns[i].HostId = run.HostId
 		report.HostRuns[i].CommandRuns = make([]CommandRunReport, len(run.CommandRuns))
 		for j, command_run := range run.CommandRuns {
 			report.HostRuns[i].CommandRuns[j] = CommandRunReport{CommandRunData: command_run}

@@ -187,6 +187,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 	job.Runs = make([]*RunData, 0, 1)
 	job.Running = true
 	var host string
+	host_id := 0
 	if job.Host != "" {
 		host = job.Host
 	} else {
@@ -194,7 +195,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 	}
 	sudo := job.Sudo
 	reports := make([]CommandRunData, len(job.Command))
-	r := RunData{job.Name, job.RunId, Succeeded, host, reports}
+	r := RunData{job.Name, job.RunId, Succeeded, host, host_id, reports}
 	for index, command := range job.Command {
 		reports[index] = CommandRunData{command, "", "", 0, time.Now(), time.Now()}
 	}
@@ -213,7 +214,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 		} else {
 			defer conn.Close()
 			for index, report := range reports {
-				command_dir := filepath.Join(run_dir, host, strconv.Itoa(index))
+				command_dir := filepath.Join(run_dir, strconv.Itoa(host_id), strconv.Itoa(index))
 				os.MkdirAll(command_dir, 0775)
 				reports[index].StartTime = time.Now()
 				log.Printf("%s.%d - running command \"%s\" on host %s\n", r.JobName, r.RunId, report.CommandSpecified, host)

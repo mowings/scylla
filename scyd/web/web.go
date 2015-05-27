@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -76,8 +75,8 @@ func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Re
 		run.DetailURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d", run.JobName, run.RunId), req)
 		for i, hr := range run.HostRuns {
 			for j, _ := range hr.CommandRuns {
-				run.HostRuns[i].CommandRuns[j].StdOutURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stdout", run.JobName, run.RunId, url.QueryEscape(hr.Host), j), req)
-				run.HostRuns[i].CommandRuns[j].StdErrURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%s/%d/stderr", run.JobName, run.RunId, url.QueryEscape(hr.Host), j), req)
+				run.HostRuns[i].CommandRuns[j].StdOutURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%d/%d/stdout", run.JobName, run.RunId, hr.HostId, j), req)
+				run.HostRuns[i].CommandRuns[j].StdErrURI = qualifyURL(fmt.Sprintf("/api/v1/jobs/%s/%d/%d/%d/stderr", run.JobName, run.RunId, hr.HostId, j), req)
 			}
 		}
 	}
@@ -134,8 +133,8 @@ func Run(ctx *Context) {
 	server.Get("/api/v1/jobs/:name/:id", func(params martini.Params, req *http.Request, r render.Render) {
 		getJobInfoJson(ctx, []string{params["name"], params["id"]}, req, r)
 	})
-	server.Get("/api/v1/jobs/:name/:id/:host/:command_id/:fn", func(params martini.Params, res http.ResponseWriter) {
-		getJobOutput(params["name"], params["id"], params["host"], params["command_id"], params["fn"], res)
+	server.Get("/api/v1/jobs/:name/:id/:host_id/:command_id/:fn", func(params martini.Params, res http.ResponseWriter) {
+		getJobOutput(params["name"], params["id"], params["host_id"], params["command_id"], params["fn"], res)
 	})
 
 	writeEndpoint(ctx.Config.Web.Listen)
