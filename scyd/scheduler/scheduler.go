@@ -68,6 +68,7 @@ func reportJobList(jobs *JobList, rchan chan StatusResponse) {
 	idx := 0
 	for _, job := range *jobs {
 		data[idx].Job = *job // Make a copy
+		idx += 1
 	}
 	// Sort the jobs before we return them
 	sort.Sort(JobsByName(data))
