@@ -236,6 +236,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 		conn, err := openConnection(keyfile, host, connection_timeout)
 		if err != nil {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
+			r.Status = Failed
 			log.Printf("Unable to connect to %s (%s)\n", host, err.Error())
 		} else {
 			defer conn.Close()
@@ -248,6 +249,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 				if err != nil {
 					reports[index].Error = err.Error()
 					reports[index].StatusCode = -1
+					r.Status = Failed
 				}
 				if stdout != nil {
 					ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
