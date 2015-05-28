@@ -83,9 +83,14 @@ func getJobInfo(ctx *Context, parts []string, req *http.Request, r render.Render
 	return code, resp
 }
 
-func getJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {
+func renderJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {
 	code, resp := getJobInfo(ctx, parts, req, r)
 	r.JSON(code, resp)
+}
+
+func renderJobListHtml(ctx *Context, req *http.Request, r render.Render) {
+	code, resp := getJobInfo(ctx, []string{}, req, r)
+	r.HTML(code, "jobs", resp.(*[]scheduler.JobReport))
 }
 
 func sanitize(path string) string {
@@ -125,8 +130,8 @@ func Run(ctx *Context) {
 	server.Get("/", func(r render.Render) {
 		r.Redirect("/jobs", 302)
 	})
-	server.Get("/jobs", func(r render.Render) {
-		r.HTML(200, "jobs", "jeremy")
+	server.Get("/jobs", func(req *http.Request, r render.Render) {
+		renderJobListHtml(ctx, req, r)
 	})
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)
@@ -135,13 +140,13 @@ func Run(ctx *Context) {
 		validateConfig(*ctx)
 	})
 	server.Get("/api/v1/jobs", func(req *http.Request, r render.Render) {
-		getJobInfoJson(ctx, []string{}, req, r)
+		renderJobInfoJson(ctx, []string{}, req, r)
 	})
 	server.Get("/api/v1/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
-		getJobInfoJson(ctx, []string{params["name"]}, req, r)
+		renderJobInfoJson(ctx, []string{params["name"]}, req, r)
 	})
 	server.Get("/api/v1/jobs/:name/:id", func(params martini.Params, req *http.Request, r render.Render) {
-		getJobInfoJson(ctx, []string{params["name"], params["id"]}, req, r)
+		renderJobInfoJson(ctx, []string{params["name"], params["id"]}, req, r)
 	})
 	server.Get("/api/v1/jobs/:name/:id/:host_id/:command_id/:fn", func(params martini.Params, res http.ResponseWriter) {
 		getJobOutput(params["name"], params["id"], params["host_id"], params["command_id"], params["fn"], res)
