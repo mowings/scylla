@@ -12,17 +12,6 @@ import (
 
 const TIMEOUT = 10
 
-type JobReport struct {
-	Job
-	DetailURI string
-}
-
-type JobReportWithHistory struct {
-	Job
-	DetailURI string
-	Runs      []RunHistoryReport
-}
-
 type JobsByName []JobReport
 
 func (slice JobsByName) Len() int           { return len(slice) }

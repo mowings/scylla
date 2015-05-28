@@ -18,9 +18,19 @@ type RunStatus int
 const (
 	Succeeded = iota
 	Failed
-	Waiting
 	Abandoned
 )
+
+type JobReport struct {
+	Job
+	DetailURI string
+}
+
+type JobReportWithHistory struct {
+	Job
+	DetailURI string
+	Runs      []RunHistoryReport
+}
 
 type StatusResponse interface{}
 
@@ -39,6 +49,9 @@ type Job struct {
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int
+	LastRunStatus   RunStatus
+	StartTime       time.Time
+	EndTime         time.Time
 	History         JobHistory `json:"-"`
 }
 
@@ -94,6 +107,10 @@ func (job *Job) update(spec *config.JobSpec) error {
 	var t time.Time
 	job.LastChecked = t
 	job.PoolIndex = 0
+	if job.Running {
+		job.Running = false
+		job.LastRunStatus = Abandoned
+	}
 	return nil
 }
 
@@ -149,6 +166,14 @@ func (job *Job) complete(r *RunData) bool {
 		if job.PoolIndex >= len(job.Pool) {
 			job.PoolIndex = 0
 		}
+		job.LastRunStatus = Succeeded
+		for _, run := range job.Runs {
+			if run.Status != Succeeded {
+				job.LastRunStatus = run.Status
+				break
+			}
+		}
+		job.EndTime = time.Now()
 		job.save()
 		return true
 	}
@@ -184,6 +209,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 		job.RunsQueued += 1
 		return
 	}
+	job.StartTime = time.Now()
 	job.Runs = make([]*RunData, 0, 1)
 	job.Running = true
 	var host string
