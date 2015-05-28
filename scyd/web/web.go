@@ -91,14 +91,14 @@ func renderJobInfoJson(ctx *Context, parts []string, req *http.Request, r render
 func renderJobListHtml(ctx *Context, req *http.Request, r render.Render) {
 	code, resp := getJobInfo(ctx, []string{}, req, r)
 	joblist := resp.(*[]scheduler.JobReport)
-	data := struct {
+	dot := struct {
 		Jobs    *[]scheduler.JobReport
 		Helpers Helpers
 	}{
 		joblist,
 		Helpers{},
 	}
-	r.HTML(code, "jobs", data)
+	r.HTML(code, "jobs", dot)
 }
 
 func sanitize(path string) string {

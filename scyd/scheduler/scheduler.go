@@ -93,11 +93,14 @@ func reportJobRunDetail(jobs *JobList, name string, runid string, rchan chan Sta
 
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 	jobs := JobList{}
+	log.Printf("Loading saved job state...")
 	err := loadJobs(&jobs)
 	if err != nil {
 		log.Printf("NOTE: Unable to open jobs state file: %s\n", err.Error())
 		jobs = JobList{}
 	}
+	log.Printf("Done..")
+
 	run_report_chan := make(chan *RunData)
 
 	for {

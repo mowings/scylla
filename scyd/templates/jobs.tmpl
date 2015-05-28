@@ -16,7 +16,7 @@
    <td>{{ .Name }}</td>
    <td>{{ .Description}}</td>
    <td>{{ .Schedule }}</td>
-   <td> 3h, 2m ago</td>
+   <td> {{$helpers.DisplayAgo .EndTime}} ago</td>
    <td> {{$helpers.DisplayRunStatus .LastRunStatus}}</td>
    <td> {{$helpers.DisplayBool .Running}} </td>
   </tr>
