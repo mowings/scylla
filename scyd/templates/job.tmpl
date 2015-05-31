@@ -1,0 +1,53 @@
+<ol class="breadcrumb">
+  <li><a href="/jobs">jobs</a></li>
+  <li class="active">{{.Job.Name}}</li>
+</ol>
+{{$h := .Helpers}}
+
+<div class="container-fluid">
+  <h3>{{.Job.Name}}</h3>
+  <div class="row">
+    <div class="col-md-12">{{.Job.Description}} </div>
+  </div>
+  <br/>
+  <div class="row">
+    <div class="col-md-1"><b>Schedule:</b></div><div class="col-md-2">{{.Job.Schedule}} </div>
+    <div class="col-md-1"><b>Last ran:</b></div><div class="col-md-2">{{$h.DisplayAgo .Job.EndTime}} </div>
+    <div class="col-md-1"><b>Status:</b></div><div class="col-md-2">{{$h.DisplayFullRunStatus .Job.LastRunStatus .Job.Running}} </div>
+    <div class="col-md-1"><b>Sudo: </b></div>
+    <div class="col-md-2">{{$h.DisplayBool .Job.Sudo}}</div>
+
+  </div>
+  <div class="row">
+    <div class="col-md-1"><b>Host: </b></div>
+    <div class="col-md-5">{{.Job.Host}}</div>
+    <div class="col-md-1"><b>Timeouts: </b></div>
+    <div class="col-md-5">c:{{.Job.ConnectTimeout}} / r: {{.Job.RunTimeout}} </div>
+  </div>
+  <h4 class= "text-muted">Commands</h4>
+  {{ range .Job.Command }}
+    <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-11">{{.}}</div>
+    </div>
+  {{end}}
+  <h4 class= "text-muted">Run History</h4>
+  <table class="table">
+    <tr>
+      <th>Run</th>
+      <th>Host</th>
+      <th>Status</th>
+      <th>Duration</th>
+    </tr>
+  {{ range .Job.Runs }}
+     <tr>
+     <td><a href="/jobs/{{$.Job.Name}}/{{.RunId}}">{{$.Job.Name}}.{{.RunId}}</a></td>
+     <td></td>
+     <td></td>
+     <td></td>
+
+     </tr>
+  {{ end }}
+  </table>
+
+</div>
