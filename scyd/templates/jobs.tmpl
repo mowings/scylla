@@ -1,6 +1,6 @@
-<nav class="navbar navbar-inverse">
-<a class="navbar-brand" href="/jobs">Jobs:</a>
-</nav>
+<ol class="breadcrumb">
+  <li class="active">Jobs</li>
+</ol>
 <table class="table">
   <tr>
     <th>Name</th>
@@ -13,10 +13,10 @@
   {{$helpers := .Helpers}}
   {{ range .Jobs }}
   <tr>
-   <td>{{ .Name }}</td>
+   <td><a href="/jobs/{{.Name}}">{{ .Name }}</a></td>
    <td>{{ .Description}}</td>
    <td>{{ .Schedule }}</td>
-   <td> {{$helpers.DisplayAgo .EndTime}} ago</td>
+   <td> {{$helpers.DisplayAgo .EndTime}}</td>
    <td> {{$helpers.DisplayRunStatus .LastRunStatus}}</td>
    <td> {{$helpers.DisplayBool .Running}} </td>
   </tr>

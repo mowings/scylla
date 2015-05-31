@@ -101,6 +101,19 @@ func renderJobListHtml(ctx *Context, req *http.Request, r render.Render) {
 	r.HTML(code, "jobs", dot)
 }
 
+func renderJobDetailHtml(name string, ctx *Context, req *http.Request, r render.Render) {
+	code, resp := getJobInfo(ctx, []string{name}, req, r)
+	job := resp.(*scheduler.JobReportWithHistory)
+	dot := struct {
+		Job     *scheduler.JobReportWithHistory
+		Helpers Helpers
+	}{
+		job,
+		Helpers{},
+	}
+	r.HTML(code, "job", dot)
+}
+
 func sanitize(path string) string {
 	clean := strings.Replace(path, "..", "", -1)
 	return clean
@@ -140,6 +153,9 @@ func Run(ctx *Context) {
 	})
 	server.Get("/jobs", func(req *http.Request, r render.Render) {
 		renderJobListHtml(ctx, req, r)
+	})
+	server.Get("/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
+		renderJobDetailHtml(params["name"], ctx, req, r)
 	})
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)

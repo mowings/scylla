@@ -20,6 +20,16 @@ func (h Helpers) DisplayBool(val bool) string {
 	return "no"
 }
 
+func (h Helpers) DisplayFullRunStatus(status scheduler.RunStatus, running bool) string {
+	ret := h.DisplayRunStatus(status)
+	if running {
+		ret += " (Running)"
+	} else {
+		ret += " (Idle)"
+	}
+	return ret
+}
+
 func (h Helpers) DisplayRunStatus(status scheduler.RunStatus) string {
 	if status < scheduler.Succeeded || status > scheduler.Abandoned {
 		return "unknown"
@@ -31,7 +41,7 @@ func (h Helpers) DisplayAgo(from time.Time) string {
 	if from == nilTime {
 		return "never"
 	}
-	return h.DisplayDuration(from, time.Now())
+	return h.DisplayDuration(from, time.Now()) + " ago"
 }
 
 func (h Helpers) DisplayDuration(from time.Time, to time.Time) string {
