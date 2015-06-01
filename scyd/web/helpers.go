@@ -56,9 +56,9 @@ func (h Helpers) DisplayDuration(from time.Time, to time.Time) string {
 	}
 	hours := int(duration.Hours()) % 24
 	if hours > 0 {
-		tm += fmt.Sprintf("%dh", hours)
+		tm += fmt.Sprintf(" %dh", hours)
 	}
 	minutes := int(duration.Minutes()) % 60
-	tm += fmt.Sprintf("%dm", minutes)
+	tm += fmt.Sprintf(" %dm", minutes)
 	return tm
 }

@@ -38,6 +38,8 @@ type HostRunReport struct {
 	Status      RunStatus
 	Host        string
 	HostId      int
+	StartTime   time.Time
+	EndTime     time.Time
 	CommandRuns []CommandRunReport
 }
 
@@ -76,6 +78,8 @@ func (rh *RunHistory) Report(omitjobname bool) *RunHistoryReport {
 		for j, command_run := range run.CommandRuns {
 			report.HostRuns[i].CommandRuns[j] = CommandRunReport{CommandRunData: command_run}
 		}
+		report.HostRuns[i].StartTime = report.HostRuns[i].CommandRuns[0].StartTime
+		report.HostRuns[i].EndTime = report.HostRuns[i].CommandRuns[len(report.HostRuns[i].CommandRuns)-1].EndTime
 	}
 	return &report
 }

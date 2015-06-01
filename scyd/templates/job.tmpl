@@ -19,11 +19,25 @@
 
   </div>
   <div class="row">
-    <div class="col-md-1"><b>Host: </b></div>
-    <div class="col-md-5">{{.Job.Host}}</div>
+    {{if .Job.Host }}
+      <div class="col-md-1"><b>Host: </b></div>
+      <div class="col-md-5">{{.Job.Host}}</div>
+    {{else }}
+      <div class="col-md-1"><b>Pool: </b></div>
+      <div class="col-md-2">{{.Job.Pool}}</div>
+    {{end }}
     <div class="col-md-1"><b>Timeouts: </b></div>
     <div class="col-md-5">c:{{.Job.ConnectTimeout}} / r: {{.Job.RunTimeout}} </div>
   </div>
+ {{if .Job.Pool }}
+   <div class="row"><div class="col-md-12"><b>Pool Hosts:</b></div></div>
+   {{range .Job.PoolHosts}}
+      <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-11">{{.}}</div>
+    </div>
+   {{end}}
+ {{end}}
   <h4 class= "text-muted">Commands</h4>
   {{ range .Job.Command }}
     <div class="row">
@@ -40,13 +54,15 @@
       <th>Duration</th>
     </tr>
   {{ range .Job.Runs }}
-     <tr>
-     <td><a href="/jobs/{{$.Job.Name}}/{{.RunId}}">{{$.Job.Name}}.{{.RunId}}</a></td>
-     <td></td>
-     <td></td>
-     <td></td>
-
-     </tr>
+    {{ $runid := .RunId}}
+    {{range .HostRuns}} 
+       <tr>
+       <td><a href="/jobs/{{$.Job.Name}}/{{$runid}}">{{$.Job.Name}}.{{$runid}}</a></td>
+       <td>{{.Host}}</td>
+       <td> {{$h.DisplayRunStatus .Status}}</td>
+       <td> {{$h.DisplayDuration .StartTime .EndTime}}</td>
+       </tr>
+    {{end}}
   {{ end }}
   </table>
 

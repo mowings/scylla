@@ -71,6 +71,9 @@ func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
 		return
 	}
 	j := JobReportWithHistory{Job: *job, Runs: make([]RunHistoryReport, len(job.History))}
+	if job.PoolInst != nil {
+		j.PoolHosts = job.PoolInst.Host
+	}
 	for i, run := range job.History {
 		j.Runs[i] = *run.Report(true)
 	}

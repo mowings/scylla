@@ -28,6 +28,7 @@ type JobReport struct {
 
 type JobReportWithHistory struct {
 	Job
+	PoolHosts []string
 	DetailURI string
 	Runs      []RunHistoryReport
 }
@@ -162,10 +163,6 @@ func (job *Job) complete(r *RunData) bool {
 				log.Printf("   %s (%s) err = %s\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.Error)
 			}
 		}
-		job.PoolIndex += 1
-		if job.PoolIndex >= len(job.Pool) {
-			job.PoolIndex = 0
-		}
 		job.LastRunStatus = Succeeded
 		for _, run := range job.Runs {
 			if run.Status != Succeeded {
@@ -217,7 +214,11 @@ func (job *Job) run(run_report_chan chan *RunData) {
 	if job.Host != "" {
 		host = job.Host
 	} else {
+		if job.PoolIndex >= len(job.PoolInst.Host) {
+			job.PoolIndex = 0
+		}
 		host = job.PoolInst.Host[job.PoolIndex]
+		job.PoolIndex += 1
 	}
 	sudo := job.Sudo
 	reports := make([]CommandRunData, len(job.Command))
