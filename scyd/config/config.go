@@ -16,7 +16,7 @@ import (
 const DEFAULT_RUN_DIR = "/var/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
 const DEFAULT_RUN_TIMEOUT = 86400
-const DEFAULT_MAX_RUN_HISTORY = 100
+const DEFAULT_MAX_RUN_HISTORY = 50
 
 var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>[^:]+)(:(?P<port>\d+))?`)
 
@@ -43,7 +43,7 @@ type JobSpec struct {
 	SudoCommand    string `gcfg:"sudo-command"`
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	RunTimeout     int    `gcfg:"run-timeout"`
-	MaxRunHistory  int
+	MaxRunHistory  int    `gcfg:"max-run-history"`
 }
 
 type Defaults struct {
@@ -55,7 +55,7 @@ type Defaults struct {
 	User           string
 	Port           int
 	OnFailure      string `gcfg:"on-failure"`
-	MaxRunHistory  int
+	MaxRunHistory  int    `gcfg:"max-run-history"`
 }
 
 type Web struct {

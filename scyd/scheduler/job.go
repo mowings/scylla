@@ -148,6 +148,14 @@ func (job *Job) isTimeForJob() bool {
 	return false
 }
 
+func cleanHistory(jobname string, runid int) {
+	run_dir := filepath.Join(runDir(), jobname, strconv.Itoa(runid))
+	log.Printf("Cleaning up directory: %s\n", run_dir)
+	go func() {
+		os.RemoveAll(run_dir)
+	}()
+}
+
 func (job *Job) complete(r *RunData) bool {
 	job.Runs = append(job.Runs, r)
 	if len(job.Runs) == cap(job.Runs) {
@@ -155,6 +163,12 @@ func (job *Job) complete(r *RunData) bool {
 		job.saveRuns(job.Runs)
 		rh := RunHistory{RunId: job.RunId, Runs: job.Runs}
 		job.History = append([]RunHistory{rh}, job.History...)
+		l := len(job.History)
+		if l > job.MaxRunHistory {
+			var h RunHistory
+			h, job.History = job.History[l-1], job.History[:l-1]
+			cleanHistory(job.Name, h.RunId)
+		}
 		job.RunId += 1
 		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
 		for _, run_report := range job.Runs {
