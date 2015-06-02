@@ -57,8 +57,8 @@
     {{ $runid := .RunId}}
     {{range .HostRuns}} 
        <tr>
-       <td><a href="/jobs/{{$.Job.Name}}/{{$runid}}">{{$.Job.Name}}.{{$runid}}</a></td>
-       <td>{{.Host}}</td>
+       <td>{{$.Job.Name}}.{{$runid}}</td>
+       <td><a href="/jobs/{{$.Job.Name}}/{{$runid}}/{{.HostId}}">{{.Host}}</a></td>
        <td> {{$h.DisplayRunStatus .Status}}</td>
        <td> {{$h.DisplayDuration .StartTime .EndTime}}</td>
        </tr>
