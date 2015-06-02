@@ -117,25 +117,27 @@ func renderJobDetailHtml(name string, ctx *Context, req *http.Request, r render.
 
 func renderHostDetailHtml(jobname string, runid string, hostid string, ctx *Context, req *http.Request, r render.Render) {
 	code, resp := getJobInfo(ctx, []string{jobname}, req, r)
+	if code != 200 {
+		r.HTML(code, "error", resp)
+		return
+	}
 	job := resp.(*scheduler.JobReportWithHistory)
 	job.Runs = nil // Free up that memory
 	var run_resp scheduler.StatusResponse
 	var run *scheduler.RunHistoryReport
 	var host_run *scheduler.HostRunReport
-	if code == 200 {
-		code, run_resp = getJobInfo(ctx, []string{jobname, runid}, req, r)
-		run = run_resp.(*scheduler.RunHistoryReport)
+	code, run_resp = getJobInfo(ctx, []string{jobname, runid}, req, r)
+	if code != 200 {
+		r.HTML(code, "error", run_resp)
+		return
 	}
-	if code == 200 {
-		id, err := strconv.Atoi(hostid)
-		if err != nil {
-			code = 404
-		} else {
-			host_run = run.GetHostRunById(id)
-			if host_run == nil {
-				code = 404
-			}
-		}
+	run = run_resp.(*scheduler.RunHistoryReport)
+	id, err := strconv.Atoi(hostid)
+	if err != nil || run.GetHostRunById(id) == nil {
+		r.HTML(404, "error", "Host ID not found")
+		return
+	} else {
+		host_run = run.GetHostRunById(id)
 	}
 	dot := struct {
 		Job     *scheduler.JobReportWithHistory
