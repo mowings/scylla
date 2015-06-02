@@ -104,6 +104,10 @@ func renderJobListHtml(ctx *Context, req *http.Request, r render.Render) {
 
 func renderJobDetailHtml(name string, ctx *Context, req *http.Request, r render.Render) {
 	code, resp := getJobInfo(ctx, []string{name}, req, r)
+	if code != 200 {
+		r.HTML(code, "error", resp)
+		return
+	}
 	job := resp.(*scheduler.JobReportWithHistory)
 	dot := struct {
 		Job     *scheduler.JobReportWithHistory
