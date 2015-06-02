@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -114,6 +115,42 @@ func renderJobDetailHtml(name string, ctx *Context, req *http.Request, r render.
 	r.HTML(code, "job", dot)
 }
 
+func renderHostDetailHtml(jobname string, runid string, hostid string, ctx *Context, req *http.Request, r render.Render) {
+	code, resp := getJobInfo(ctx, []string{jobname}, req, r)
+	job := resp.(*scheduler.JobReportWithHistory)
+	job.Runs = nil // Free up that memory
+	var run_resp scheduler.StatusResponse
+	var run *scheduler.RunHistoryReport
+	var host_run *scheduler.HostRunReport
+	if code == 200 {
+		code, run_resp = getJobInfo(ctx, []string{jobname, runid}, req, r)
+		run = run_resp.(*scheduler.RunHistoryReport)
+	}
+	if code == 200 {
+		id, err := strconv.Atoi(hostid)
+		if err != nil {
+			code = 404
+		} else {
+			host_run = run.GetHostRunById(id)
+			if host_run == nil {
+				code = 404
+			}
+		}
+	}
+	dot := struct {
+		Job     *scheduler.JobReportWithHistory
+		Run     *scheduler.RunHistoryReport
+		HostRun *scheduler.HostRunReport
+		Helpers Helpers
+	}{
+		job,
+		run,
+		host_run,
+		Helpers{},
+	}
+	r.HTML(code, "host", dot)
+}
+
 func sanitize(path string) string {
 	clean := strings.Replace(path, "..", "", -1)
 	return clean
@@ -157,6 +194,10 @@ func Run(ctx *Context) {
 	server.Get("/jobs/:name", func(params martini.Params, req *http.Request, r render.Render) {
 		renderJobDetailHtml(params["name"], ctx, req, r)
 	})
+	server.Get("/jobs/:name/:runid/:hostid", func(params martini.Params, req *http.Request, r render.Render) {
+		renderHostDetailHtml(params["name"], params["runid"], params["hostid"], ctx, req, r)
+	})
+
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
 		loadConfig(*ctx)
 	})

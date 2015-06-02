@@ -1,0 +1,10 @@
+<ol class="breadcrumb">
+  <li><a href="/jobs">jobs</a></li>
+  <li><a href="/jobs/{{.Job.Name}}">{{.Job.Name}}</a></li>
+  <li class="active">{{.Run.RunId}} ({{.HostRun.Host}})</li>
+</ol>
+
+<div class="container-fluid">
+  {{template "job_partial" .}}
+  <h3 class="text-muted"> {{.Job.Name}}.{{.Run.RunId}}.{{.HostRun.Host}}</h3>
+</div>

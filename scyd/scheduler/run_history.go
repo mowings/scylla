@@ -65,6 +65,15 @@ func (slice JobHistory) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
+func (rhr *RunHistoryReport) GetHostRunById(id int) *HostRunReport {
+	for _, hrr := range rhr.HostRuns {
+		if hrr.HostId == id {
+			return &hrr
+		}
+	}
+	return nil
+}
+
 func (rh *RunHistory) Report(omitjobname bool) *RunHistoryReport {
 	report := RunHistoryReport{RunId: rh.RunId, HostRuns: make([]HostRunReport, len(rh.Runs))}
 	if !omitjobname {
