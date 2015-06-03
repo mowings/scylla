@@ -13,7 +13,7 @@ var status_names = []string{"None", "Succeeded", "Failed", "Abandoned"}
 var status_class_names = []string{"bg-info", "bg-success", "bg-danger", "bg-warning"}
 var status_buttons = []string{
 	"<button class=\"btn btn-status btn-small btn-info\">None</button>",
-	"<button class=\"btn btn-status btn-small btn-success\">Succeeded</button>",
+	"<button class=\"btn btn-status btn-small btn-success\">Success</button>",
 	"<button class=\"btn btn-status btn-small btn-danger\">Failed</button>",
 	"<button class=\"btn btn-status btn-small btn-info\">Abandoned</button>",
 }

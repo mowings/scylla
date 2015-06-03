@@ -39,7 +39,7 @@
         <div class="col-md-3"></div>
       </div>
       <div class = "row">
-        <div class="col-md-11 command-text">{{.CommandSpecified}}</div>
+        <div class="col-md-11 command-text">$ {{.CommandSpecified}}</div>
         <div class="col-md-1">{{$h.DisplayRunStatusButton .Status}}</div>
       </div>
       {{ if eq .Status 2}}
@@ -48,6 +48,17 @@
         <div class="col-md-11">{{.Error}}</div>
       </div>
       {{end}}
+      <div class="row">
+        <div class="col-md-1">stdout:</div>
+        <div class="col-md-10"><pre class="command-text" id="stdout">loading...</pre></div>
+        <div class="col-md-1"></div>
+      </div>
+      <div class="row">
+        <div class="col-md-1">stderr:</div>
+        <div class="col-md-10"><pre class="command-text" id="stderr">loading...</pre></div>
+        <div class="col-md-1"></div>
+      </div>
+
     </div>
   {{end}}
 </div>

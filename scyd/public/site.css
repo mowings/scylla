@@ -3,7 +3,7 @@ button.btn-status {
   padding-top: 2px;
   padding-bottom: 2px;
   font-size: 12px;
-  width: 76px;
+  width: 74px;
 }
 
 div.run-panel {
@@ -24,4 +24,12 @@ div.command-text {
   font-family: monospace;
   font-size: 13px;
 }
+
+pre.command-text {
+  color: greenyellow;
+  background-color: black;
+  font-family: monospace;
+  font-size: 13px;
+}
+
 
