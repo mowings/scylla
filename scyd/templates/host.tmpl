@@ -1,3 +1,5 @@
+{{$h := .Helpers}}
+
 <ol class="breadcrumb">
   <li><a href="/jobs">jobs</a></li>
   <li><a href="/jobs/{{.Job.Name}}">{{.Job.Name}}</a></li>
@@ -5,6 +7,43 @@
 </ol>
 
 <div class="container-fluid">
-  {{template "job_partial" .}}
-  <h3 class="text-muted"> {{.Job.Name}}.{{.Run.RunId}}.{{.HostRun.Host}}</h3>
+  <h3> {{.Job.Name}}.{{.Run.RunId}}</h3>
+  <h4 class="text-muted"> {{.HostRun.Host}}</h4>
+  <div class="row">
+    <div class="col-md-1"><b>status:</b></div>
+    <div class="col-md-2">{{$h.DisplayRunStatus .HostRun.Status}}</div>
+    <div class="col-md-1"><b>start:</b></div>
+    <div class="col-md-2">{{$h.DisplayTime .HostRun.StartTime}}</div>
+    <div class="col-md-1"><b>end:</b></div>
+    <div class="col-md-2">{{$h.DisplayTime .HostRun.EndTime}}</div>
+    <div class="col-md-1"><b>duration:</b></div>
+    <div class="col-md-2">{{$h.DisplayDuration .HostRun.StartTime .HostRun.EndTime}}</div>
+  </div>
+  <div class="row">
+    <div class="col-md-1"><b>sudo?</b></div>
+    <div class="col-md-11">{{$h.DisplayBool .Job.Sudo}}</div>
+  </div>
+  <div class="row">
+     <div class="col-md-12"><b>commands:</b></div>
+  </div>
+  {{range .HostRun.CommandRuns}}
+    <div class="container">
+      <div class = "row">
+        <div class="col-md-12">{{.CommandSpecified}}</div>
+      </div>
+      {{ if .Error }}
+      <div class = "row">
+        <div class="col-md-1">status: </div>
+        <div class="col-md-1 .red">FAILED </div>
+        <div class="col-md-1">error: </div>
+        <div class="col-md-9">{{.Error}}</div>
+      </div>
+      {{else}}
+      <div class = "row">
+        <div class="col-md-1">status: </div>
+        <div class="col-md-11 .green">SUCCEEDED</div>
+      </div>
+      {{end}}
+    </div>
+  {{end}}
 </div>

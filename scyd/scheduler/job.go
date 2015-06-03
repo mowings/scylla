@@ -16,7 +16,8 @@ import (
 type RunStatus int
 
 const (
-	Succeeded = iota
+	None = iota
+	Succeeded
 	Failed
 	Abandoned
 )

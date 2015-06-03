@@ -8,7 +8,7 @@ import (
 
 var nilTime = time.Time{}
 
-var status_names = []string{"Succeeded", "Failed", "Abandoned"}
+var status_names = []string{"None", "Succeeded", "Failed", "Abandoned"}
 
 type Helpers struct {
 }
@@ -31,7 +31,7 @@ func (h Helpers) DisplayFullRunStatus(status scheduler.RunStatus, running bool) 
 }
 
 func (h Helpers) DisplayRunStatus(status scheduler.RunStatus) string {
-	if status < scheduler.Succeeded || status > scheduler.Abandoned {
+	if status < scheduler.None || status > scheduler.Abandoned {
 		return "unknown"
 	}
 	return status_names[status]
@@ -42,6 +42,10 @@ func (h Helpers) DisplayAgo(from time.Time) string {
 		return "never"
 	}
 	return h.DisplayDuration(from, time.Now()) + " ago"
+}
+
+func (h Helpers) DisplayTime(t time.Time) string {
+	return t.Format(time.RFC822)
 }
 
 func (h Helpers) DisplayDuration(from time.Time, to time.Time) string {
