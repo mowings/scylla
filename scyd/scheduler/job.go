@@ -90,8 +90,8 @@ func loadJob(path string) (job *Job, err error) {
 		id, cvt_err := strconv.Atoi(subdir)
 		if cvt_err == nil && id >= lower_bound {
 			runs := RunHistory{RunId: id}
-			data, err = ioutil.ReadFile(filepath.Join(rd, "runs.json"))
-			if err == nil {
+			data, err2 := ioutil.ReadFile(filepath.Join(rd, "runs.json"))
+			if err2 == nil {
 				if err := json.Unmarshal(data, &runs.Runs); err == nil {
 					job.History = append(job.History, runs)
 				} else {
