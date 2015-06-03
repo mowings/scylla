@@ -17,7 +17,7 @@
    <td>{{ .Description}}</td>
    <td>{{ .Schedule }}</td>
    <td> {{$h.DisplayAgo .EndTime}}</td>
-   <td class="{{$h.DisplayRunStatusClasses .LastRunStatus}}"> {{$h.DisplayRunStatus .LastRunStatus}}</td>
+   <td> {{$h.DisplayRunStatusButton .LastRunStatus}}</td>
    <td> {{$h.DisplayBool .Running}} </td>
   </tr>
   {{ end }}

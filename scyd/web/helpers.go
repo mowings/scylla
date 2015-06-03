@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"github.com/mowings/scylla/scyd/scheduler"
+	"html/template"
 	"time"
 )
 
@@ -10,6 +11,14 @@ var nilTime = time.Time{}
 
 var status_names = []string{"None", "Succeeded", "Failed", "Abandoned"}
 var status_class_names = []string{"bg-info", "bg-success", "bg-danger", "bg-warning"}
+var status_buttons = []string{
+	"<button class=\"btn btn-status btn-small btn-info\">None</button>",
+	"<button class=\"btn btn-status btn-small btn-success\">Succeeded</button>",
+	"<button class=\"btn btn-status btn-small btn-danger\">Failed</button>",
+	"<button class=\"btn btn-status btn-small btn-info\">Abandoned</button>",
+}
+
+const BTN_UNKNOWN = "<button class==\"btn btn-status btn-small btn-warning\">Unknown</button>"
 
 type Helpers struct {
 }
@@ -43,6 +52,13 @@ func (h Helpers) DisplayRunStatusClasses(status scheduler.RunStatus) string {
 		return "bg-warning"
 	}
 	return status_class_names[status]
+}
+
+func (h Helpers) DisplayRunStatusButton(status scheduler.RunStatus) template.HTML {
+	if status < scheduler.None || status > scheduler.Abandoned {
+		return template.HTML(BTN_UNKNOWN)
+	}
+	return template.HTML(status_buttons[status])
 }
 
 func (h Helpers) DisplayAgo(from time.Time) string {
