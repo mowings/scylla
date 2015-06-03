@@ -69,7 +69,7 @@ func (h Helpers) DisplayRunStatusButton(status scheduler.RunStatus) template.HTM
 }
 
 func (h Helpers) DisplayAgo(from time.Time) string {
-	if from == nilTime {
+	if from.Equal(nilTime) {
 		return "never"
 	}
 	return h.DisplayDuration(from, time.Now()) + " ago"
