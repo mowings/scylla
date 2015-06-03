@@ -239,7 +239,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 	reports := make([]CommandRunData, len(job.Command))
 	r := RunData{job.Name, job.RunId, Succeeded, host, host_id, reports}
 	for index, command := range job.Command {
-		reports[index] = CommandRunData{command, "", "", 0, time.Now(), time.Now()}
+		reports[index] = CommandRunData{command, "", None, "", 0, time.Now(), time.Now()}
 	}
 	keyfile := job.Keyfile
 	connection_timeout := job.ConnectTimeout
@@ -252,6 +252,7 @@ func (job *Job) run(run_report_chan chan *RunData) {
 		conn, err := openConnection(keyfile, host, connection_timeout)
 		if err != nil {
 			reports[0].Error = err.Error() // Just set first command to error on a failed connection
+			reports[0].Status = Failed
 			r.Status = Failed
 			log.Printf("Unable to connect to %s (%s)\n", host, err.Error())
 		} else {
@@ -265,7 +266,10 @@ func (job *Job) run(run_report_chan chan *RunData) {
 				if err != nil {
 					reports[index].Error = err.Error()
 					reports[index].StatusCode = -1
+					reports[index].Status = Failed
 					r.Status = Failed
+				} else {
+					reports[index].Status = Succeeded
 				}
 				if stdout != nil {
 					ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)

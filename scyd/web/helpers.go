@@ -9,6 +9,7 @@ import (
 var nilTime = time.Time{}
 
 var status_names = []string{"None", "Succeeded", "Failed", "Abandoned"}
+var status_class_names = []string{"bg-info", "bg-success", "bg-danger", "bg-warning"}
 
 type Helpers struct {
 }
@@ -35,6 +36,13 @@ func (h Helpers) DisplayRunStatus(status scheduler.RunStatus) string {
 		return "unknown"
 	}
 	return status_names[status]
+}
+
+func (h Helpers) DisplayRunStatusClasses(status scheduler.RunStatus) string {
+	if status < scheduler.None || status > scheduler.Abandoned {
+		return "bg-warning"
+	}
+	return status_class_names[status]
 }
 
 func (h Helpers) DisplayAgo(from time.Time) string {

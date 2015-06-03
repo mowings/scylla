@@ -7,6 +7,7 @@ import (
 type CommandRunData struct {
 	CommandSpecified string
 	CommandRun       string
+	Status           RunStatus
 	Error            string
 	StatusCode       int
 	StartTime        time.Time
