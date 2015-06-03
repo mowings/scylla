@@ -40,6 +40,13 @@ func (h Helpers) DisplayFullRunStatus(status scheduler.RunStatus, running bool) 
 	return ret
 }
 
+func (h Helpers) DisplayRunningClass(running bool) string {
+	if running {
+		return "bg-primary"
+	}
+	return ""
+}
+
 func (h Helpers) DisplayRunStatus(status scheduler.RunStatus) string {
 	if status < scheduler.None || status > scheduler.Abandoned {
 		return "unknown"

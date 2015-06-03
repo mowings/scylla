@@ -1,6 +1,23 @@
+/* Override some bootstrap button attributes for status */
 button.btn-status {
   padding-top: 2px;
   padding-bottom: 2px;
   font-size: 12px;
-  width: 90px;
+  width: 76px;
 }
+
+div.run-panel {
+  margin-left:0px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  padding-top: 8px;
+  background-color: beige;
+}
+
+div.command-text {
+  color: greenyellow;
+  background-color: black;
+  font-family: monospace;
+  font-size: 13px;
+}
+

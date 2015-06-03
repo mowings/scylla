@@ -20,7 +20,7 @@
        <tr>
        <td>{{$.Job.Name}}.{{$runid}}</td>
        <td><a href="/jobs/{{$.Job.Name}}/{{$runid}}/{{.HostId}}">{{.Host}}</a></td>
-       <td class="{{$h.DisplayRunStatusClasses .Status}}"> {{$h.DisplayRunStatus .Status}}</td>
+       <td> {{$h.DisplayRunStatusButton .Status}}</td>
        <td> {{$h.DisplayDuration .StartTime .EndTime}}</td>
        </tr>
     {{end}}
