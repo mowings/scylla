@@ -97,6 +97,8 @@ func loadJob(path string) (job *Job, err error) {
 				} else {
 					log.Printf("Unable to marshal run: %s\n", err.Error())
 				}
+			} else {
+				log.Printf("Unable to read run file: %s\b", err2.Error())
 			}
 		}
 	}
