@@ -15,7 +15,7 @@ var status_buttons = []string{
 	"<button class=\"btn btn-status btn-small btn-info\">None</button>",
 	"<button class=\"btn btn-status btn-small btn-success\">Success</button>",
 	"<button class=\"btn btn-status btn-small btn-danger\">Failed</button>",
-	"<button class=\"btn btn-status btn-small btn-info\">Abandoned</button>",
+	"<button class=\"btn btn-status btn-small btn-warning\">Abandoned</button>",
 }
 
 const BTN_UNKNOWN = "<button class==\"btn btn-status btn-small btn-warning\">Unknown</button>"
