@@ -29,6 +29,15 @@
   </div>
   {{range .HostRun.CommandRuns}}
     <div class="container run-panel">
+      <div class="row">
+        <div class="col-md-1"><b>start:</b></div>
+        <div class="col-md-2">{{$h.DisplayTime .StartTime}}</div>
+        <div class="col-md-1"><b>end:</b></div>
+        <div class="col-md-2">{{$h.DisplayTime .EndTime}}</div>
+        <div class="col-md-1"><b>duration:</b></div>
+        <div class="col-md-2">{{$h.DisplayDuration .StartTime .EndTime}}</div>
+        <div class="col-md-3"></div>
+      </div>
       <div class = "row">
         <div class="col-md-11 command-text">{{.CommandSpecified}}</div>
         <div class="col-md-1">{{$h.DisplayRunStatusButton .Status}}</div>
