@@ -39,7 +39,8 @@
         <div class="col-md-3"></div>
       </div>
       <div class = "row">
-        <div class="col-md-11 command-text">$ {{.CommandSpecified}}</div>
+        <div class="col-md-1">command:</div>
+        <div class="col-md-10"><pre class="command-text">$ {{.CommandSpecified}}</pre></div>
         <div class="col-md-1">{{$h.DisplayRunStatusButton .Status}}</div>
       </div>
       {{ if eq .Status 2}}

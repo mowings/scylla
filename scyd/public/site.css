@@ -18,13 +18,6 @@ div.run-panel div.row {
   margin-bottom: 4px;
 }
 
-div.command-text {
-  color: greenyellow;
-  background-color: black;
-  font-family: monospace;
-  font-size: 13px;
-}
-
 pre.command-text {
   color: greenyellow;
   background-color: black;
@@ -33,5 +26,19 @@ pre.command-text {
   max-height: 333px;
   overflow: scroll;
 }
+
+div.running {
+  color: white;
+  background: lightskyblue;
+  text-align:center;
+  width:50px;
+}
+
+div.not-running {
+  text-align:center;
+  background: lightcyan;
+  width: 50px;
+}
+
 
 
