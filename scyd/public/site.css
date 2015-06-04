@@ -28,15 +28,15 @@ pre.command-text {
 }
 
 div.running {
-  color: white;
-  background: lightskyblue;
+  color: yellow;
+  background: black;
   text-align:center;
   width:50px;
 }
 
 div.not-running {
   text-align:center;
-  background: lightcyan;
+  background: lightgrey;
   width: 50px;
 }
 
