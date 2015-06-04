@@ -30,6 +30,8 @@ pre.command-text {
   background-color: black;
   font-family: monospace;
   font-size: 13px;
+  max-height: 333px;
+  overflow: scroll;
 }
 
 
