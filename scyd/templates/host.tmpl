@@ -27,7 +27,7 @@
   <div class="row">
      <div class="col-md-12"><b>commands:</b></div>
   </div>
-  {{range .HostRun.CommandRuns}}
+  {{range $index, $element :=.HostRun.CommandRuns}}
     <div class="container run-panel">
       <div class="row">
         <div class="col-md-1"><b>start:</b></div>
@@ -50,15 +50,27 @@
       {{end}}
       <div class="row">
         <div class="col-md-1">stdout:</div>
-        <div class="col-md-10"><pre class="command-text" id="stdout">loading...</pre></div>
+        <div class="col-md-10"><pre class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stdout">loading...</pre></div>
         <div class="col-md-1"></div>
       </div>
       <div class="row">
         <div class="col-md-1">stderr:</div>
-        <div class="col-md-10"><pre class="command-text" id="stderr">loading...</pre></div>
+        <div class="col-md-10"><pre class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stderr">loading...</pre></div>
         <div class="col-md-1"></div>
       </div>
-
     </div>
   {{end}}
 </div>
+
+<script>
+ $(document).ready(function() {
+    $("pre.output").each(function(index){
+      $(this).load($(this).attr("data-url"), function(response, status, xhr) {
+         if(status == "error") {
+           $(this).html("");
+         }
+      });
+    });
+  });
+</script>
+
