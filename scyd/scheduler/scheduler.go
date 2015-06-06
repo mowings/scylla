@@ -12,12 +12,6 @@ import (
 
 const TIMEOUT = 10
 
-type JobsByName []JobReport
-
-func (slice JobsByName) Len() int           { return len(slice) }
-func (slice JobsByName) Less(i, j int) bool { return slice[i].Name < slice[j].Name }
-func (slice JobsByName) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
-
 func Run() (load_chan chan string, status_chan chan StatusRequest) {
 	load_chan = make(chan string)
 	status_chan = make(chan StatusRequest)

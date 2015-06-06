@@ -16,7 +16,7 @@ import (
 type RunStatus int
 
 const (
-	None = iota
+	None RunStatus = iota
 	Succeeded
 	Failed
 	Abandoned
@@ -58,6 +58,12 @@ type Job struct {
 }
 
 type JobList map[string]*Job
+
+type JobsByName []JobReport
+
+func (slice JobsByName) Len() int           { return len(slice) }
+func (slice JobsByName) Less(i, j int) bool { return slice[i].Name < slice[j].Name }
+func (slice JobsByName) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
 
 func New(spec *config.JobSpec) (*Job, error) {
 	job := Job{}
