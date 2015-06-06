@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/ssh"
 	"io/ioutil"
@@ -17,8 +19,10 @@ type RunStatus int
 
 const (
 	None RunStatus = iota
+	Running
 	Succeeded
 	Failed
+	Cancelled
 	Abandoned
 )
 
@@ -31,7 +35,7 @@ type JobReportWithHistory struct {
 	Job
 	PoolHosts []string
 	DetailURI string
-	Runs      []RunHistoryReport
+	Runs      JobHistory
 }
 
 type StatusResponse interface{}
@@ -44,16 +48,12 @@ type StatusRequest struct {
 // Job runtime
 type Job struct {
 	config.JobSpec
-	Running         bool
+	RunInfo
 	RunId           int
 	RunsOutstanding int
-	Runs            []*RunData `json:"-"`
 	RunsQueued      int
 	LastChecked     time.Time
 	PoolIndex       int
-	LastRunStatus   RunStatus
-	StartTime       time.Time
-	EndTime         time.Time
 	History         JobHistory `json:"-"`
 }
 
@@ -95,11 +95,11 @@ func loadJob(path string) (job *Job, err error) {
 		_, subdir := filepath.Split(rd)
 		id, cvt_err := strconv.Atoi(subdir)
 		if cvt_err == nil && id >= lower_bound {
-			runs := RunHistory{RunId: id}
-			data, err2 := ioutil.ReadFile(filepath.Join(rd, "runs.json"))
+			run := JobRun{}
+			data, err2 := ioutil.ReadFile(filepath.Join(rd, "run.json"))
 			if err2 == nil {
-				if err := json.Unmarshal(data, &runs.Runs); err == nil {
-					job.History = append(job.History, runs)
+				if err := json.Unmarshal(data, &run); err == nil {
+					job.History = append(job.History, run)
 				} else {
 					log.Printf("Unable to marshal run: %s\n", err.Error())
 				}
@@ -117,9 +117,8 @@ func (job *Job) update(spec *config.JobSpec) error {
 	var t time.Time
 	job.LastChecked = t
 	job.PoolIndex = 0
-	if job.Running {
-		job.Running = false
-		job.LastRunStatus = Abandoned
+	if job.Status == Running {
+		job.Status = Abandoned
 	}
 	return nil
 }
@@ -134,12 +133,12 @@ func (job *Job) save() (err error) {
 	return err
 }
 
-func (job *Job) saveRuns(runs []*RunData) (err error) {
+func (job *Job) saveRun(run *JobRun) (err error) {
 	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
 	os.MkdirAll(run_dir, 0755)
-	path := filepath.Join(run_dir, "runs.json")
+	path := filepath.Join(run_dir, "run.json")
 	var b []byte
-	if b, err = json.Marshal(runs); err == nil {
+	if b, err = json.Marshal(run); err == nil {
 		err = ioutil.WriteFile(path, b, 0644)
 	}
 	return err
@@ -165,43 +164,40 @@ func cleanHistory(jobname string, runid int) {
 	}()
 }
 
-func (job *Job) complete(r *RunData) bool {
-	job.Runs = append(job.Runs, r)
-	if len(job.Runs) == cap(job.Runs) {
-		job.Running = false
-		job.saveRuns(job.Runs)
-		rh := RunHistory{RunId: job.RunId, Runs: job.Runs}
-		job.History = append([]RunHistory{rh}, job.History...)
-		l := len(job.History)
-		if l > job.MaxRunHistory {
-			var h RunHistory
-			h, job.History = job.History[l-1], job.History[:l-1]
-			cleanHistory(job.Name, h.RunId)
+func (job *Job) complete(r *HostRun) bool {
+	log.Printf("Received host run report %s.%s.%s\n", job.Name, r.RunId, r.Host)
+	i, err := job.getRunIndex(r.RunId)
+	if err != nil {
+		log.Printf("ERROR: %s in job complete", err.Error())
+		return false
+	}
+	for j, hr := range job.History[i].HostRuns {
+		if hr.HostId == r.HostId {
+			job.History[i].HostRuns[j] = *r
 		}
-		job.RunId += 1
-		log.Printf("Completed job %s.%d.\n", job.Name, job.RunId)
-		for _, run_report := range job.Runs {
-			log.Printf("%s.%d.%s\n", run_report.JobName, run_report.RunId, run_report.Host)
-			for _, command_run_report := range run_report.CommandRuns {
-				log.Printf("   %s (%s) err = %s\n", command_run_report.CommandSpecified, command_run_report.CommandRun, command_run_report.Error)
-			}
-		}
-		job.LastRunStatus = Succeeded
-		for _, run := range job.Runs {
-			if run.Status != Succeeded {
-				job.LastRunStatus = run.Status
-				break
-			}
-		}
+	}
+	job.History[i].updateStatus()
+	if job.History[0].Status != Running {
+		job.Status = job.History[0].Status
+		log.Printf("Completed job %s.%d (%d)\n", job.Name, job.RunId, job.Status)
 		job.EndTime = time.Now()
+		job.RunId += 1
 		job.save()
 		return true
 	}
 	return false
-
 }
 
-func (job *Job) getRun(id string) *RunHistory {
+func (job *Job) getRunIndex(id int) (int, error) {
+	for idx, rh := range job.History {
+		if rh.RunId == id {
+			return idx, nil
+		}
+	}
+	return 0, errors.New(fmt.Sprintf("run %d nost found", id))
+}
+
+func (job *Job) getRun(id string) *JobRun {
 	nid, err := strconv.Atoi(id)
 	if err != nil {
 		return nil
@@ -224,72 +220,107 @@ func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnectio
 	return &c, err
 }
 
-func (job *Job) run(run_report_chan chan *RunData) {
-	if job.Running {
+func (job *Job) hostRuns() []HostRun {
+	var runs []HostRun
+	if job.Host != "" {
+		runs = make([]HostRun, 1)
+		runs[0] = HostRun{JobName: job.Name, RunId: job.RunId, Host: job.Host, HostId: 0}
+	} else if job.PoolMode != "parallel" {
+		runs = make([]HostRun, 1)
+		if job.PoolIndex >= len(job.PoolInst.Host) {
+			job.PoolIndex = 0
+		}
+		runs[0] = HostRun{JobName: job.Name, RunId: job.RunId, Host: job.PoolInst.Host[job.PoolIndex], HostId: 0}
+		job.PoolIndex += 1
+	} else {
+		runs = make([]HostRun, len(job.PoolInst.Host))
+		for i, h := range job.PoolInst.Host {
+			runs[i] = HostRun{JobName: job.Name, RunId: job.RunId, Host: h, HostId: i}
+		}
+	}
+	for i, _ := range runs {
+		runs[i].CommandRuns = make([]CommandRun, len(job.Command))
+		for j, cmd := range job.Command {
+			runs[i].CommandRuns[j] = CommandRun{CommandSpecified: cmd}
+		}
+	}
+	return runs
+}
+
+func (job *Job) run(run_report_chan chan *HostRun) {
+	if job.Status == Running {
 		job.RunsQueued += 1
 		return
 	}
 	job.StartTime = time.Now()
-	job.Runs = make([]*RunData, 0, 1)
-	job.Running = true
-	var host string
-	host_id := 0
-	if job.Host != "" {
-		host = job.Host
-	} else {
-		if job.PoolIndex >= len(job.PoolInst.Host) {
-			job.PoolIndex = 0
-		}
-		host = job.PoolInst.Host[job.PoolIndex]
-		job.PoolIndex += 1
+	job.Status = Running
+	runs := job.hostRuns() // Create array of host run objects
+	job_run := JobRun{RunId: job.RunId, JobName: job.Name, HostRuns: runs}
+	job_run.Status = Running
+	job.History = append([]JobRun{job_run}, job.History...)
+	l := len(job.History)
+	if l > job.MaxRunHistory {
+		var old_run JobRun
+		old_run, job.History = job.History[l-1], job.History[:l-1]
+		cleanHistory(job.Name, old_run.RunId)
 	}
 	sudo := job.Sudo
-	reports := make([]CommandRunData, len(job.Command))
-	r := RunData{job.Name, job.RunId, Succeeded, host, host_id, reports}
-	for index, command := range job.Command {
-		reports[index] = CommandRunData{command, "", None, "", 0, time.Now(), time.Now()}
-	}
 	keyfile := job.Keyfile
 	connection_timeout := job.ConnectTimeout
-	run_timeout := job.RunTimeout
+	listen_timeout := job.RunTimeout
 	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
+	for _, run := range runs {
+		run.Status = Running
+		go runCommandsOnHost(run, sudo, keyfile, connection_timeout, listen_timeout, run_dir, run_report_chan)
+	}
+}
 
-	go func() {
-		os.MkdirAll(run_dir, 0755)
-		log.Printf("Opening connection to: %s (%d)\n", host, connection_timeout)
-		conn, err := openConnection(keyfile, host, connection_timeout)
-		if err != nil {
-			reports[0].Error = err.Error() // Just set first command to error on a failed connection
-			reports[0].Status = Failed
-			r.Status = Failed
-			log.Printf("Unable to connect to %s (%s)\n", host, err.Error())
-		} else {
-			defer conn.Close()
-			for index, report := range reports {
-				command_dir := filepath.Join(run_dir, strconv.Itoa(host_id), strconv.Itoa(index))
-				os.MkdirAll(command_dir, 0775)
-				reports[index].StartTime = time.Now()
-				log.Printf("%s.%d - running command \"%s\" on host %s\n", r.JobName, r.RunId, report.CommandSpecified, host)
-				stdout, stderr, err := conn.Run(report.CommandSpecified, run_timeout, sudo)
-				if err != nil {
-					reports[index].Error = err.Error()
-					reports[index].StatusCode = -1
-					reports[index].Status = Failed
-					r.Status = Failed
-				} else {
-					reports[index].Status = Succeeded
+// Run command set on single remote host
+func runCommandsOnHost(
+	hr HostRun,
+	sudo bool,
+	keyfile string,
+	connection_timeout int,
+	read_timeout int,
+	run_dir string,
+	run_report_chan chan *HostRun) {
+	log.Printf("Opening connection to: %s (%d)\n", hr.Host, connection_timeout)
+	hr.StartTime = time.Now()
+	conn, err := openConnection(keyfile, hr.Host, connection_timeout)
+	if err != nil {
+		hr.CommandRuns[0].Error = err.Error() // Just set first command to error on a failed connection
+		hr.CommandRuns[0].Status = Failed
+		hr.Status = Failed
+		log.Printf("Unable to connect to %s (%s)\n", hr.Host, err.Error())
+		hr.EndTime = time.Now()
+	} else {
+		defer conn.Close()
+		for index, report := range hr.CommandRuns {
+			command_dir := filepath.Join(run_dir, strconv.Itoa(hr.HostId), strconv.Itoa(index))
+			os.MkdirAll(command_dir, 0775)
+			hr.CommandRuns[index].StartTime = time.Now()
+			log.Printf("%s.%d - running command \"%s\" on host %s\n", hr.JobName, hr.RunId, report.CommandSpecified, hr.Host)
+			stdout, stderr, err := conn.Run(report.CommandSpecified, read_timeout, sudo)
+			if err != nil {
+				hr.CommandRuns[index].Error = err.Error()
+				hr.CommandRuns[index].StatusCode = -1
+				hr.CommandRuns[index].Status = Failed
+				hr.Status = Failed
+			} else {
+				hr.CommandRuns[index].Status = Succeeded
+				if hr.Status == None {
+					hr.Status = Succeeded
 				}
-				if stdout != nil {
-					ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
-				}
-				if stderr != nil {
-					ioutil.WriteFile(filepath.Join(command_dir, "stderr"), []byte(*stderr), 0644)
-				}
-				reports[index].CommandRun = report.CommandSpecified
-				reports[index].EndTime = time.Now()
 			}
+			if stdout != nil {
+				ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
+			}
+			if stderr != nil {
+				ioutil.WriteFile(filepath.Join(command_dir, "stderr"), []byte(*stderr), 0644)
+			}
+			hr.CommandRuns[index].EndTime = time.Now()
 		}
-		run_report_chan <- &r
-	}()
-
+		hr.EndTime = time.Now()
+	}
+	run_report_chan <- &hr
 }
