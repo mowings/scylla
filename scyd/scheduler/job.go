@@ -183,6 +183,7 @@ func (job *Job) complete(r *HostRun) bool {
 		job.EndTime = time.Now()
 		job.RunId += 1
 		job.save()
+		job.saveRun(&job.History[i])
 		return true
 	}
 	return false
@@ -270,6 +271,7 @@ func (job *Job) run(run_report_chan chan *HostRun) {
 	connection_timeout := job.ConnectTimeout
 	listen_timeout := job.RunTimeout
 	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
+	job.saveRun(&job_run)
 	for _, run := range runs {
 		run.Status = Running
 		go runCommandsOnHost(run, sudo, keyfile, connection_timeout, listen_timeout, run_dir, run_report_chan)
