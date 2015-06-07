@@ -69,6 +69,8 @@
       $(this).load($(this).attr("data-url"), function(response, status, xhr) {
          if(status == "error") {
            $(this).html("");
+         } else {
+           $(this)[0].scrollTop = $(this)[0].scrollHeight;
          }
       });
     });
