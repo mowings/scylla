@@ -9,6 +9,14 @@ import (
 	"reflect"
 )
 
+func qualifyURL(path string, req *http.Request) string {
+	proto := req.Header.Get("X-Forwarded-Proto")
+	if proto == "" {
+		proto = "http"
+	}
+	return fmt.Sprintf("%s://%s%s", proto, req.Host, path)
+}
+
 func getJobInfo(ctx *Context, parts []string, req *http.Request, r render.Render) (int, scheduler.StatusResponse) {
 	resp_chan := make(chan scheduler.StatusResponse)
 	status_req := scheduler.StatusRequest{Object: parts, Chan: resp_chan}

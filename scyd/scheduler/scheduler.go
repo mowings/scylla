@@ -58,7 +58,7 @@ func reportJobList(jobs *JobList, rchan chan StatusResponse) {
 	rchan <- &data
 }
 
-func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
+func reportJobWithHistory(jobs *JobList, name string, rchan chan StatusResponse) {
 	job := (*jobs)[name]
 	if job == nil {
 		rchan <- fmt.Sprintf("Job \"%s\" not found.", name)
@@ -74,7 +74,7 @@ func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
 	rchan <- &j
 }
 
-func reportJobRunDetail(jobs *JobList, name string, runid string, rchan chan StatusResponse) {
+func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusResponse) {
 	job := (*jobs)[name]
 	if job == nil {
 		rchan <- fmt.Sprintf("Job (%s) not found.", name)
@@ -115,9 +115,9 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			case 0:
 				reportJobList(&jobs, status_req.Chan)
 			case 1:
-				reportJobDetail(&jobs, status_req.Object[0], status_req.Chan)
+				reportJobWithHistory(&jobs, status_req.Object[0], status_req.Chan)
 			case 2:
-				reportJobRunDetail(&jobs, status_req.Object[0], status_req.Object[1], status_req.Chan)
+				reportJobRun(&jobs, status_req.Object[0], status_req.Object[1], status_req.Chan)
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]
