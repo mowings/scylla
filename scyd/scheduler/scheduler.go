@@ -121,8 +121,8 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]
-			if job == nil || job.RunId != run_report.RunId {
-				log.Printf("Received run report for unknown job/run id: %s (%d). Discarding\n", run_report.JobName, run_report.RunId)
+			if job == nil {
+				log.Printf("Received run report for unknown job: %s. Discarding\n", run_report.JobName)
 				break
 			}
 			if job.complete(run_report) {

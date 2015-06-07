@@ -294,9 +294,7 @@ func runCommandsOnHost(
 	if err != nil {
 		hr.CommandRuns[0].Error = err.Error() // Just set first command to error on a failed connection
 		hr.CommandRuns[0].Status = Failed
-		hr.Status = Failed
 		log.Printf("Unable to connect to %s (%s)\n", hr.Host, err.Error())
-		hr.EndTime = time.Now()
 	} else {
 		defer conn.Close()
 		for index, report := range hr.CommandRuns {
@@ -311,12 +309,8 @@ func runCommandsOnHost(
 				hr.CommandRuns[index].Error = err.Error()
 				hr.CommandRuns[index].StatusCode = -1
 				hr.CommandRuns[index].Status = Failed
-				hr.Status = Failed
 			} else {
 				hr.CommandRuns[index].Status = Succeeded
-				if hr.Status == Running {
-					hr.Status = Succeeded
-				}
 			}
 			run_report_chan <- &hr
 			if stdout != nil {
@@ -327,7 +321,16 @@ func runCommandsOnHost(
 			}
 			hr.CommandRuns[index].EndTime = time.Now()
 		}
-		hr.EndTime = time.Now()
 	}
+
+	// Calculate host run status
+	hr.Status = Succeeded
+	for _, cr := range hr.CommandRuns {
+		if cr.Status == Failed {
+			hr.Status = Failed
+			break
+		}
+	}
+	hr.EndTime = time.Now()
 	run_report_chan <- &hr
 }

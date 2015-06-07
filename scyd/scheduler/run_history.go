@@ -62,7 +62,7 @@ func (jr JobRun) GetHostRunById(id int) *HostRun {
 }
 
 func (jr *JobRun) updateStatus() {
-	if jr.Status == Failed {
+	if jr.Status != Running {
 		return
 	}
 	completed := 0
@@ -75,9 +75,7 @@ func (jr *JobRun) updateStatus() {
 		}
 	}
 	if completed == len(jr.HostRuns) {
-		if jr.Status == Running {
-			jr.Status = Succeeded
-		}
+		jr.Status = Succeeded
 		jr.EndTime = time.Now()
 	}
 }
