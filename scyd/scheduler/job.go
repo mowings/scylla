@@ -140,6 +140,9 @@ func (job *Job) saveRun(run *JobRun) (err error) {
 	var b []byte
 	if b, err = json.Marshal(run); err == nil {
 		err = ioutil.WriteFile(path, b, 0644)
+		if err != nil {
+			log.Printf("Unable to save job status: %s\n", err.Error())
+		}
 	}
 	return err
 }
@@ -181,7 +184,6 @@ func (job *Job) complete(r *HostRun) bool {
 		job.Status = job.History[0].Status
 		log.Printf("Completed job %s.%d (%d)\n", job.Name, job.RunId, job.Status)
 		job.EndTime = time.Now()
-		job.RunId += 1
 		job.save()
 		job.saveRun(&job.History[i])
 		return true
@@ -256,6 +258,7 @@ func (job *Job) run(run_report_chan chan *HostRun) {
 	}
 	job.StartTime = time.Now()
 	job.Status = Running
+	job.RunId += 1
 	runs := job.hostRuns() // Create array of host run objects
 	job_run := JobRun{RunId: job.RunId, JobName: job.Name, HostRuns: runs}
 	job_run.Status = Running
