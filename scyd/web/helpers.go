@@ -9,12 +9,12 @@ import (
 
 var nilTime = time.Time{}
 
-var status_names = []string{"None", "Succeeded", "Failed", "Abandoned"}
-var status_class_names = []string{"bg-info", "bg-success", "bg-danger", "bg-warning"}
 var status_buttons = []string{
 	"<button class=\"btn btn-status btn-small btn-info\">none</button>",
+	"<button class=\"btn btn-status btn-small btn-info\">running</button>",
 	"<button class=\"btn btn-status btn-small btn-success\">success</button>",
 	"<button class=\"btn btn-status btn-small btn-danger\">failed</button>",
+	"<button class=\"btn btn-status btn-small btn-danger\">cancelled</button>",
 	"<button class=\"btn btn-status btn-small btn-warning\">dropped</button>",
 }
 
@@ -28,38 +28,6 @@ func (h Helpers) DisplayBool(val bool) string {
 		return "yes"
 	}
 	return "no"
-}
-
-func (h Helpers) DisplayFullRunStatus(status scheduler.RunStatus, running bool) string {
-	ret := h.DisplayRunStatus(status)
-	if running {
-		ret += " (Running)"
-	} else {
-		ret += " (Idle)"
-	}
-	return ret
-}
-
-func (h Helpers) DisplayRunningHtml(running bool) template.HTML {
-	if running {
-		return template.HTML("<div class=\"running\">yes</div>")
-	}
-	return template.HTML("<div class=\"not-running\">no</div>")
-
-}
-
-func (h Helpers) DisplayRunStatus(status scheduler.RunStatus) string {
-	if status < scheduler.None || status > scheduler.Abandoned {
-		return "unknown"
-	}
-	return status_names[status]
-}
-
-func (h Helpers) DisplayRunStatusClasses(status scheduler.RunStatus) string {
-	if status < scheduler.None || status > scheduler.Abandoned {
-		return "bg-warning"
-	}
-	return status_class_names[status]
 }
 
 func (h Helpers) DisplayRunStatusButton(status scheduler.RunStatus) template.HTML {

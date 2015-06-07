@@ -8,7 +8,6 @@
     <th>Schedule</th>
     <th>Last Run</th>
     <th>Status</th>
-    <th>Running?</th>
   </tr>
   {{$h := .Helpers}}
   {{ range .Jobs }}
@@ -17,8 +16,7 @@
    <td>{{ .Description}}</td>
    <td>{{ .Schedule }}</td>
    <td> {{$h.DisplayAgo .EndTime}}</td>
-   <td> {{$h.DisplayRunStatusButton .LastRunStatus}}</td>
-   <td> {{$h.DisplayRunningHtml .Running}} </td>
+   <td> {{$h.DisplayRunStatusButton .Status}}</td>
   </tr>
   {{ end }}
 </table>

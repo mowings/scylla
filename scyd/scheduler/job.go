@@ -239,6 +239,7 @@ func (job *Job) hostRuns() []HostRun {
 		}
 	}
 	for i, _ := range runs {
+		runs[i].Status = Running
 		runs[i].CommandRuns = make([]CommandRun, len(job.Command))
 		for j, cmd := range job.Command {
 			runs[i].CommandRuns[j] = CommandRun{CommandSpecified: cmd}
