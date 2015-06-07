@@ -64,12 +64,12 @@ func reportJobDetail(jobs *JobList, name string, rchan chan StatusResponse) {
 		rchan <- fmt.Sprintf("Job \"%s\" not found.", name)
 		return
 	}
-	j := JobReportWithHistory{Job: *job, Runs: make([]RunHistoryReport, len(job.History))}
+	j := JobReportWithHistory{Job: *job, Runs: make([]JobRun, len(job.History))}
 	if job.PoolInst != nil {
 		j.PoolHosts = job.PoolInst.Host
 	}
 	for i, run := range job.History {
-		j.Runs[i] = *run.Report(true)
+		j.Runs[i] = run
 	}
 	rchan <- &j
 }
@@ -80,12 +80,12 @@ func reportJobRunDetail(jobs *JobList, name string, runid string, rchan chan Sta
 		rchan <- fmt.Sprintf("Job (%s) not found.", name)
 		return
 	}
-	rh := job.getRun(runid)
-	if rh == nil {
+	jr := job.getRun(runid)
+	if jr == nil {
 		rchan <- fmt.Sprintf("Run (%s.%s) not found.", name, runid)
 		return
 	}
-	rchan <- rh.Report(false)
+	rchan <- jr
 }
 
 func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
@@ -98,7 +98,7 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 	}
 	log.Printf("Done..")
 
-	run_report_chan := make(chan *RunData)
+	run_report_chan := make(chan *HostRun)
 
 	for {
 		select {
