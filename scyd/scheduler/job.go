@@ -302,6 +302,8 @@ func runCommandsOnHost(
 			os.MkdirAll(command_dir, 0775)
 			hr.CommandRuns[index].StartTime = time.Now()
 			log.Printf("%s.%d - running command \"%s\" on host %s\n", hr.JobName, hr.RunId, report.CommandSpecified, hr.Host)
+			hr.CommandRuns[index].Status = Running
+			run_report_chan <- &hr
 			stdout, stderr, err := conn.Run(report.CommandSpecified, read_timeout, sudo)
 			if err != nil {
 				hr.CommandRuns[index].Error = err.Error()
@@ -314,6 +316,7 @@ func runCommandsOnHost(
 					hr.Status = Succeeded
 				}
 			}
+			run_report_chan <- &hr
 			if stdout != nil {
 				ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
 			}
