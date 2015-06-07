@@ -61,7 +61,7 @@ func (jr JobRun) GetHostRunById(id int) *HostRun {
 	return nil
 }
 
-func (jr JobRun) updateStatus() {
+func (jr *JobRun) updateStatus() {
 	if jr.Status == Failed {
 		return
 	}

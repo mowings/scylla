@@ -165,7 +165,7 @@ func cleanHistory(jobname string, runid int) {
 }
 
 func (job *Job) complete(r *HostRun) bool {
-	log.Printf("Received host run report %s.%s.%s\n", job.Name, r.RunId, r.Host)
+	log.Printf("Received host run report %s.%d.%s status=%d\n", job.Name, r.RunId, r.Host, r.Status)
 	i, err := job.getRunIndex(r.RunId)
 	if err != nil {
 		log.Printf("ERROR: %s in job complete", err.Error())
@@ -286,6 +286,7 @@ func runCommandsOnHost(
 	run_report_chan chan *HostRun) {
 	log.Printf("Opening connection to: %s (%d)\n", hr.Host, connection_timeout)
 	hr.StartTime = time.Now()
+	hr.Status = Running
 	conn, err := openConnection(keyfile, hr.Host, connection_timeout)
 	if err != nil {
 		hr.CommandRuns[0].Error = err.Error() // Just set first command to error on a failed connection
@@ -308,7 +309,7 @@ func runCommandsOnHost(
 				hr.Status = Failed
 			} else {
 				hr.CommandRuns[index].Status = Succeeded
-				if hr.Status == None {
+				if hr.Status == Running {
 					hr.Status = Succeeded
 				}
 			}
