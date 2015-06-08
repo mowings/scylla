@@ -99,6 +99,14 @@ func loadJob(path string) (job *Job, err error) {
 			data, err2 := ioutil.ReadFile(filepath.Join(rd, "run.json"))
 			if err2 == nil {
 				if err := json.Unmarshal(data, &run); err == nil {
+					if run.Status == Running {
+						run.Status = Abandoned
+					}
+					for i, _ := range run.HostRuns {
+						if run.HostRuns[i].Status == Running {
+							run.HostRuns[i].Status = Abandoned
+						}
+					}
 					job.History = append(job.History, run)
 				} else {
 					log.Printf("Unable to marshal run: %s\n", err.Error())
