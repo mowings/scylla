@@ -51,12 +51,24 @@
       {{end}}
       <div class="row">
         <div class="col-md-1">stdout:</div>
-        <div class="col-md-10"><pre class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stdout">loading...</pre></div>
+        <div class="col-md-10"><pre  id="stdout-{{$.HostRun.HostId}}-{{$index}}" class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stdout">loading...</pre></div>
+        <div class="col-md-1"></div>
+      </div>
+      <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-9"></div>
+        <div class="col-md-1 reload"><a data-id="stdout-{{$.HostRun.HostId}}-{{$index}}" href="#">reload</a></div>
         <div class="col-md-1"></div>
       </div>
       <div class="row">
         <div class="col-md-1">stderr:</div>
-        <div class="col-md-10"><pre class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stderr">loading...</pre></div>
+        <div class="col-md-10"><pre id="stderr-{{$.HostRun.HostId}}-{{$index}}" class="command-text output" data-url="/api/v1/jobs/{{$.Job.Name}}/{{$.Run.RunId}}/{{$.HostRun.HostId}}/{{$index}}/stderr">loading...</pre></div>
+        <div class="col-md-1"></div>
+      </div>
+      <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-9"></div>
+        <div class="col-md-1 reload"><a data-id="stderr-{{$.HostRun.HostId}}-{{$index}}"  href="#">reload</a></div>
         <div class="col-md-1"></div>
       </div>
     </div>
@@ -73,6 +85,11 @@
            $(this)[0].scrollTop = $(this)[0].scrollHeight;
          }
       });
+    });
+    $( "div.reload a" ).click(function() {
+       var pre =  $("#"+$(this).attr("data-id"));
+       pre.load(pre.attr("data-url"));
+       return false;
     });
   });
 </script>

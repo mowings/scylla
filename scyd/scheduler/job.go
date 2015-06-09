@@ -315,7 +315,18 @@ func runCommandsOnHost(
 			log.Printf("%s.%d - running command \"%s\" on host %s\n", hr.JobName, hr.RunId, report.CommandSpecified, hr.Host)
 			hr.CommandRuns[index].Status = Running
 			run_report_chan <- &hr
-			stdout, stderr, err := conn.Run(report.CommandSpecified, read_timeout, sudo)
+			stdout_f, err := os.Create(filepath.Join(command_dir, "stdout"))
+			if err != nil {
+				panic(err)
+			}
+			defer stdout_f.Close()
+			stderr_f, err := os.Create(filepath.Join(command_dir, "stderr"))
+			if err != nil {
+				panic(err)
+			}
+			defer stderr_f.Close()
+
+			err = conn.RunWithWriters(report.CommandSpecified, read_timeout, sudo, stdout_f, stderr_f)
 			if err != nil {
 				hr.CommandRuns[index].Error = err.Error()
 				hr.CommandRuns[index].StatusCode = -1
@@ -324,12 +335,6 @@ func runCommandsOnHost(
 				hr.CommandRuns[index].Status = Succeeded
 			}
 			run_report_chan <- &hr
-			if stdout != nil {
-				ioutil.WriteFile(filepath.Join(command_dir, "stdout"), []byte(*stdout), 0644)
-			}
-			if stderr != nil {
-				ioutil.WriteFile(filepath.Join(command_dir, "stderr"), []byte(*stderr), 0644)
-			}
 			hr.CommandRuns[index].EndTime = time.Now()
 		}
 	}

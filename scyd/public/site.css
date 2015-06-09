@@ -25,6 +25,7 @@ pre.command-text {
   font-size: 13px;
   max-height: 333px;
   overflow: scroll;
+  margin-bottom: 2px;
 }
 
 div.running {
@@ -39,6 +40,16 @@ div.not-running {
   background: lightgrey;
   width: 50px;
 }
+
+div.reload {
+  text-align: right;
+  padding-top: 0px;
+}
+div.reload a {
+  margin-top: 0px;
+}
+
+
 
 
 
