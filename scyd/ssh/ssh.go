@@ -132,10 +132,21 @@ func (conn *SshConnection) NewSession() (*ssh.Session, error) {
 }
 
 func (conn *SshConnection) Run(command string, timeout int, sudo bool) (*string, *string, error) {
+
+	stdout := bytes.NewBufferString("")
+	stderr := bytes.NewBufferString("")
+
+	err := conn.RunWithWriters(command, timeout, sudo, stdout, stderr)
+	stdout_s := stdout.String()
+	stderr_s := stderr.String()
+	return &stdout_s, &stderr_s, err
+}
+
+func (conn *SshConnection) RunWithWriters(command string, timeout int, sudo bool, stdout io.Writer, stderr io.Writer) error {
 	session, err := conn.NewSession()
 	if err != nil {
 		log.Printf("Unable to open session: %s", err.Error())
-		return nil, nil, err
+		return err
 	}
 	defer session.Close()
 	if timeout == 0 {
@@ -150,12 +161,8 @@ func (conn *SshConnection) Run(command string, timeout int, sudo bool) (*string,
 
 	log.Printf("Executing [%s] on %s...\n", cmd, conn.server)
 
-	stdout := bytes.NewBufferString("")
-	stderr := bytes.NewBufferString("")
 	session.Stdout = stdout
 	session.Stderr = stderr
 	err = session.Run(cmd)
-	stdout_s := stdout.String()
-	stderr_s := stderr.String()
-	return &stdout_s, &stderr_s, err
+	return err
 }
