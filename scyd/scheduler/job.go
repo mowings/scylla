@@ -38,13 +38,6 @@ type JobReportWithHistory struct {
 	Runs      JobHistory
 }
 
-type StatusResponse interface{}
-
-type StatusRequest struct {
-	Object []string
-	Chan   chan StatusResponse
-}
-
 // Job runtime
 type Job struct {
 	config.JobSpec

@@ -12,6 +12,30 @@ import (
 
 const TIMEOUT = 10
 
+// Response
+type StatusResponse interface{}
+
+// Base request
+type Request interface{}
+
+// Status Request (report job, run or host/command details)
+type StatusRequest struct {
+	Object []string
+	Chan   chan StatusResponse
+}
+
+// Load config request
+type LoadConfigRequest string
+
+// Run a job
+type RunJobRequest string
+
+// Change Job Status
+type ChangeJobStatusRequest struct {
+	Name   string
+	Status RunStatus
+}
+
 func Run() (load_chan chan string, status_chan chan StatusRequest) {
 	load_chan = make(chan string)
 	status_chan = make(chan StatusRequest)
