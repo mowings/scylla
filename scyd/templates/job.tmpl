@@ -16,9 +16,13 @@
     </tr>
   {{ range .Job.Runs }}
     {{ $runid := .RunId}}
-    {{range .HostRuns}} 
+    {{range $index, $element := .HostRuns}}
        <tr>
-       <td>{{$.Job.Name}}.{{$runid}}</td>
+       {{if eq $index 0 }}
+          <td>{{$.Job.Name}}.{{$runid}}</td>
+       {{else}}
+          <td></td>
+       {{end}}
        <td><a href="/jobs/{{$.Job.Name}}/{{$runid}}/{{.HostId}}">{{.Host}}</a></td>
        <td> {{$h.DisplayRunStatusButton .Status}}</td>
        <td> {{$h.DisplayDuration .StartTime .EndTime}}</td>

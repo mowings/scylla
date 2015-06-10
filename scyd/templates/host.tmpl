@@ -87,8 +87,10 @@
       });
     });
     $( "div.reload a" ).click(function() {
-       var pre =  $("#"+$(this).attr("data-id"));
-       pre.load(pre.attr("data-url"));
+       var out =  $("#"+$(this).attr("data-id"));
+       out.load(out.attr("data-url"),function(response, status, xhr) {
+        out[0].scrollTop = out[0].scrollHeight;
+       });
        return false;
     });
   });
