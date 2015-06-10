@@ -43,7 +43,7 @@
         <div class="col-md-10"><pre class="command-text">$ {{.CommandSpecified}}</pre></div>
         <div class="col-md-1">{{$h.DisplayRunStatusButton .Status}}</div>
       </div>
-      {{ if eq .Status 2}}
+      {{ if eq .Status 3}}
       <div class = "row">
         <div class="col-md-1 text-danger"><b>error:</b> </div>
         <div class="col-md-11">{{.Error}}</div>
