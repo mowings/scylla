@@ -135,6 +135,14 @@ func runSchedule(request_chan chan Request) {
 			}
 		case base_req := <-request_chan:
 			switch req := base_req.(type) {
+			case RunJobRequest:
+				name := string(req)
+				log.Printf("Manual job run request for: %s", name)
+				job := jobs[name]
+				if job != nil {
+					job.run(run_report_chan)
+					job.save()
+				}
 			case LoadConfigRequest:
 				log.Println("Got config load request.")
 				path := string(req)
