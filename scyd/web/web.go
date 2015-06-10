@@ -7,7 +7,6 @@ import (
 	"github.com/mowings/scylla/scyd/config"
 	"github.com/mowings/scylla/scyd/scheduler"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -55,13 +54,6 @@ func getJobOutput(jobname, jobid, host, command_id, fn string, res http.Response
 
 }
 
-func writeEndpoint(endpoint string) {
-	err := ioutil.WriteFile("/var/run/scylla.endpoint", []byte(endpoint), 0644)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func Run(ctx *Context) {
 	loadConfig(*ctx) // Force a load on startup
 	server := martini.Classic()
@@ -102,7 +94,6 @@ func Run(ctx *Context) {
 		getJobOutput(params["name"], params["id"], params["host_id"], params["command_id"], params["fn"], res)
 	})
 
-	writeEndpoint(ctx.Config.Web.Listen)
 	server.RunOnAddr(ctx.Config.Web.Listen)
 
 }

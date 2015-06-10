@@ -10,6 +10,8 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Error("Got error on parse " + err.Error())
 	} else {
+		log.Printf("General: %+v\n", cfg.General)
+		log.Printf("Web: %+v\n", cfg.Web)
 		log.Printf("Defaults: %+v\n", cfg.Defaults)
 		log.Println("Pools:")
 		for k, v := range cfg.Pool {

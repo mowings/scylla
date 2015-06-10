@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"strconv"
+	"syscall"
 )
 
 func writePid() {
@@ -19,19 +21,47 @@ func writePid() {
 	}
 }
 
+func writeEndpoint(endpoint string) {
+	err := ioutil.WriteFile("/var/run/scylla.endpoint", []byte(endpoint), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func setUser(name string) (err error) {
+	user, err := user.Lookup(name)
+	if err == nil {
+		nid, _ := strconv.Atoi(user.Uid)
+		err = syscall.Setuid(nid)
+	}
+	return err
+}
+
 func main() {
 	var ctx web.Context
 	cfg_path := flag.String("config", "/etc/scylla.conf", "Config file path")
 	flag.Parse()
 	log.Printf("Starting scylla server...")
+
 	ctx.CfgPath = *cfg_path
-	ctx.LoadChan, ctx.StatusChan = scheduler.Run()
+	// Vaildate config on startup and save pid and endpoints
 	cfg, err := config.New(ctx.CfgPath)
 	if err != nil {
-		log.Fatal("Unable to parse config file: " + err.Error())
+		log.Printf("Unable to load config: %s", err.Error())
 		os.Exit(-1)
 	}
+
 	writePid()
+	writeEndpoint(cfg.Web.Listen)
+	if cfg.General.User != "" {
+		log.Printf("Running as : %s", cfg.General.User)
+		if err := setUser(cfg.General.User); err != nil {
+			log.Printf("Unable to change uid: %s", err.Error())
+			os.Exit(-1)
+		}
+	}
+
+	ctx.LoadChan, ctx.StatusChan = scheduler.Run()
 	ctx.Config = *cfg
 	web.Run(&ctx)
 }

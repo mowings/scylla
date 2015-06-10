@@ -58,11 +58,16 @@ type Defaults struct {
 	MaxRunHistory  int    `gcfg:"max-run-history"`
 }
 
+type General struct {
+	User string
+}
+
 type Web struct {
 	Listen string
 }
 
 type Config struct {
+	General  General
 	Web      Web
 	Defaults Defaults
 	Pool     map[string]*PoolSpec
