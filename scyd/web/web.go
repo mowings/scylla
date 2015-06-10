@@ -15,10 +15,9 @@ import (
 )
 
 type Context struct {
-	CfgPath    string
-	LoadChan   chan string
-	StatusChan chan scheduler.StatusRequest
-	Config     config.Config
+	CfgPath string
+	ReqChan chan scheduler.Request
+	Config  config.Config
 }
 
 func loadConfig(ctx Context) (*config.Config, error) {
@@ -26,7 +25,7 @@ func loadConfig(ctx Context) (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx.LoadChan <- ctx.CfgPath
+	ctx.ReqChan <- scheduler.LoadConfigRequest(ctx.CfgPath)
 	return cfg, nil
 }
 

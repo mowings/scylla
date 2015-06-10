@@ -20,7 +20,7 @@ func qualifyURL(path string, req *http.Request) string {
 func getJobInfo(ctx *Context, parts []string, req *http.Request, r render.Render) (int, scheduler.StatusResponse) {
 	resp_chan := make(chan scheduler.StatusResponse)
 	status_req := scheduler.StatusRequest{Object: parts, Chan: resp_chan}
-	ctx.StatusChan <- status_req
+	ctx.ReqChan <- status_req
 	resp := <-resp_chan
 	code := 200
 	proto := req.Header.Get("X-Forwarded-Proto")

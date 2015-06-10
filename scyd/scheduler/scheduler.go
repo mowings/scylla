@@ -36,11 +36,10 @@ type ChangeJobStatusRequest struct {
 	Status RunStatus
 }
 
-func Run() (load_chan chan string, status_chan chan StatusRequest) {
-	load_chan = make(chan string)
-	status_chan = make(chan StatusRequest)
-	go runSchedule(load_chan, status_chan)
-	return load_chan, status_chan
+func Run() (request_chan chan Request) {
+	request_chan = make(chan Request)
+	go runSchedule(request_chan)
+	return request_chan
 }
 
 func runDir() string {
@@ -112,7 +111,7 @@ func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusRes
 	rchan <- jr
 }
 
-func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
+func runSchedule(request_chan chan Request) {
 	jobs := JobList{}
 	log.Printf("Loading saved job state...")
 	err := loadJobs(&jobs)
@@ -134,14 +133,53 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 					job.save()
 				}
 			}
-		case status_req := <-status_chan:
-			switch len(status_req.Object) {
-			case 0:
-				reportJobList(&jobs, status_req.Chan)
-			case 1:
-				reportJobWithHistory(&jobs, status_req.Object[0], status_req.Chan)
-			case 2:
-				reportJobRun(&jobs, status_req.Object[0], status_req.Object[1], status_req.Chan)
+		case base_req := <-request_chan:
+			switch req := base_req.(type) {
+			case LoadConfigRequest:
+				log.Println("Got config load request.")
+				path := string(req)
+				cfg, err := config.New(path)
+				if err != nil {
+					log.Printf("Unable to parse %s : %s\n", path, err.Error)
+				} else {
+					new_jobs := JobList{}
+					for name, job := range cfg.Job {
+						if jobs[name] == nil {
+							log.Printf("Adding new job: %s\n", name)
+							new_job, err := New(job)
+							if err != nil {
+								log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
+							} else {
+								new_jobs[name] = new_job
+								new_job.save()
+							}
+						} else {
+							log.Printf("Updating job: %s\n", name)
+							jobs[name].update(job)
+							jobs[name].save()
+							new_jobs[name] = jobs[name]
+						}
+					}
+					// Delete old job state files
+					for name, _ := range jobs {
+						if new_jobs[name] == nil {
+							log.Printf("Removing old job file for %s\n", name)
+							os.Remove(filepath.Join(runDir(), name+".json"))
+						}
+					}
+					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
+					jobs = new_jobs
+				}
+			case StatusRequest:
+				switch len(req.Object) {
+				case 0:
+					reportJobList(&jobs, req.Chan)
+				case 1:
+					reportJobWithHistory(&jobs, req.Object[0], req.Chan)
+				case 2:
+					reportJobRun(&jobs, req.Object[0], req.Object[1], req.Chan)
+				}
+
 			}
 		case run_report := <-run_report_chan:
 			job := jobs[run_report.JobName]
@@ -151,41 +189,6 @@ func runSchedule(load_chan chan string, status_chan chan StatusRequest) {
 			}
 			if job.complete(run_report) {
 				log.Printf("Completed job %s\n", job.Name)
-			}
-
-		case path := <-load_chan:
-			log.Println("Got config load request.")
-			cfg, err := config.New(path)
-			if err != nil {
-				log.Printf("Unable to parse %s : %s\n", path, err.Error)
-			} else {
-				new_jobs := JobList{}
-				for name, job := range cfg.Job {
-					if jobs[name] == nil {
-						log.Printf("Adding new job: %s\n", name)
-						new_job, err := New(job)
-						if err != nil {
-							log.Printf("Error: Unable to create new job: %s: %s\n", name, err.Error())
-						} else {
-							new_jobs[name] = new_job
-							new_job.save()
-						}
-					} else {
-						log.Printf("Updating job: %s\n", name)
-						jobs[name].update(job)
-						jobs[name].save()
-						new_jobs[name] = jobs[name]
-					}
-				}
-				// Delete old job state files
-				for name, _ := range jobs {
-					if new_jobs[name] == nil {
-						log.Printf("Removing old job file for %s\n", name)
-						os.Remove(filepath.Join(runDir(), name+".json"))
-					}
-				}
-				jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
-				jobs = new_jobs
 			}
 		}
 	}

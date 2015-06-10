@@ -61,7 +61,7 @@ func main() {
 		}
 	}
 
-	ctx.LoadChan, ctx.StatusChan = scheduler.Run()
+	ctx.ReqChan = scheduler.Run()
 	ctx.Config = *cfg
 	web.Run(&ctx)
 }
