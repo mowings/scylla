@@ -86,6 +86,10 @@ func Run(ctx *Context) {
 		ctx.ReqChan <- change_run_status_req
 	})
 
+	server.Put("/api/v1/pool/:pool", func(params martini.Params, req *http.Request, r render.Render) {
+		updatePool(ctx, params["pool"], req, r)
+	})
+
 	server.Get("/api/v1/test", func(req *http.Request, r render.Render) {
 		validateConfig(*ctx)
 	})

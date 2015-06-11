@@ -226,6 +226,10 @@ func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnectio
 
 func (job *Job) hostRuns() []HostRun {
 	var runs []HostRun
+	// Bail if no host and no or empty pool
+	if job.Host == "" && (job.PoolInst == nil || len(job.PoolInst.Host) == 0) {
+		return runs
+	}
 	if job.Host != "" {
 		runs = make([]HostRun, 1)
 		runs[0] = HostRun{JobName: job.Name, RunId: job.RunId, Host: job.Host, HostId: 0}

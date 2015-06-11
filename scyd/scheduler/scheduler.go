@@ -117,6 +117,7 @@ func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusRes
 }
 
 func runSchedule(request_chan chan Request) {
+	var current_config *config.Config
 	jobs := JobList{}
 	log.Printf("Loading saved job state...")
 	err := loadJobs(&jobs)
@@ -141,11 +142,18 @@ func runSchedule(request_chan chan Request) {
 		case base_req := <-request_chan: // Client requests/commands
 			switch req := base_req.(type) {
 			case UpdatePoolRequest:
-				pool := config.PoolSpec{Name: req.Name, Host: req.Hosts}
+				log.Printf("Received update for pool: %s", req.Name)
+				pool := config.PoolSpec{Name: req.Name}
+				if current_config != nil {
+					pool.UpdateHosts(req.Hosts, current_config.Defaults.User, current_config.Defaults.Port)
+				} else {
+					pool.Host = req.Hosts // Possible that we have no config data
+				}
 				for _, job := range jobs {
 					if job.PoolInst != nil && job.PoolInst.Name == pool.Name {
 						log.Printf("Updating job %s with updated pool %s", job.Name, pool.Name)
 						job.PoolInst = &pool
+						job.PoolIndex = 0
 					}
 				}
 
@@ -199,6 +207,7 @@ func runSchedule(request_chan chan Request) {
 					}
 					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 					jobs = new_jobs
+					current_config = cfg
 				}
 			case StatusRequest:
 				switch len(req.Object) {

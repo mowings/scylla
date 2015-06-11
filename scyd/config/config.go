@@ -17,6 +17,7 @@ const DEFAULT_RUN_DIR = "/var/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
 const DEFAULT_RUN_TIMEOUT = 86400
 const DEFAULT_MAX_RUN_HISTORY = 50
+const DEFAULT_PORT = 22
 
 var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>[^:]+)(:(?P<port>\d+))?`)
 
@@ -84,6 +85,9 @@ func New(fn string) (cfg *Config, err error) {
 	if cfg.Defaults.ConnectTimeout == 0 {
 		cfg.Defaults.ConnectTimeout = DEFAULT_CONNECT_TIMEOUT
 	}
+	if cfg.Defaults.Port == 0 {
+		cfg.Defaults.Port = DEFAULT_PORT
+	}
 	if cfg.Defaults.RunTimeout == 0 {
 		cfg.Defaults.RunTimeout = DEFAULT_RUN_TIMEOUT
 	}
@@ -92,7 +96,8 @@ func New(fn string) (cfg *Config, err error) {
 	}
 
 	// Qualify Pool hosts
-	for _, pool := range cfg.Pool {
+	for name, pool := range cfg.Pool {
+		pool.Name = name
 		for idx, host := range pool.Host {
 			pool.Host[idx] = qualifyHost(host, cfg.Defaults.User, cfg.Defaults.Port)
 		}
