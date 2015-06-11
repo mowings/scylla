@@ -57,6 +57,15 @@ func reload(host string) {
 	fmt.Println("reloaded")
 }
 
+func run(host, jobname string) {
+	doPut(host, fmt.Sprintf("run/%s", jobname), "")
+	fmt.Println("run requested")
+}
+func fail(host, jobname string) {
+	doPut(host, fmt.Sprintf("fail/%s", jobname), "")
+	fmt.Println("failed")
+}
+
 func main() {
 	if len(os.Args) <= 1 {
 		err_exit("Syntax: scyctl <reload|test|run|fail> [job]")
@@ -67,6 +76,16 @@ func main() {
 	switch cmd {
 	case "reload":
 		reload(host)
+	case "run":
+		if len(os.Args) <= 2 {
+			err_exit("Syntax: sysctl run <jobname>")
+		}
+		run(host, os.Args[2])
+	case "fail":
+		if len(os.Args) <= 2 {
+			err_exit("Syntax: sysctl fail <jobname>")
+		}
+		fail(host, os.Args[2])
 	case "test":
 		test(host)
 	default:

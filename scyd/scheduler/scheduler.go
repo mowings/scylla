@@ -125,7 +125,7 @@ func runSchedule(request_chan chan Request) {
 
 	for {
 		select {
-		case <-time.After(time.Second * TIMEOUT):
+		case <-time.After(time.Second * TIMEOUT): // Check for job runs
 			for name, job := range jobs {
 				if job.isTimeForJob() {
 					log.Printf("Time for job: %s\n", name)
@@ -133,8 +133,16 @@ func runSchedule(request_chan chan Request) {
 					job.save()
 				}
 			}
-		case base_req := <-request_chan:
+		case base_req := <-request_chan: // Client requests/commands
 			switch req := base_req.(type) {
+			case ChangeJobStatusRequest:
+				log.Printf("Job status change for: %s", req.Name)
+				job := jobs[req.Name]
+				if job != nil {
+					log.Printf("Changing status of job %s to %d", req.Name, req.Status)
+					job.Status = req.Status
+					job.save()
+				}
 			case RunJobRequest:
 				name := string(req)
 				log.Printf("Manual job run request for: %s", name)
@@ -189,7 +197,7 @@ func runSchedule(request_chan chan Request) {
 				}
 
 			}
-		case run_report := <-run_report_chan:
+		case run_report := <-run_report_chan: // Job status from goproc command runners
 			job := jobs[run_report.JobName]
 			if job == nil {
 				log.Printf("Received run report for unknown job: %s. Discarding\n", run_report.JobName)

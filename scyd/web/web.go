@@ -81,6 +81,11 @@ func Run(ctx *Context) {
 		ctx.ReqChan <- scheduler.RunJobRequest(params["job"])
 	})
 
+	server.Put("/api/v1/fail/:job", func(params martini.Params, req *http.Request, r render.Render) {
+		change_run_status_req := scheduler.ChangeJobStatusRequest{Name: params["job"], Status: scheduler.Failed}
+		ctx.ReqChan <- change_run_status_req
+	})
+
 	server.Get("/api/v1/test", func(req *http.Request, r render.Render) {
 		validateConfig(*ctx)
 	})
