@@ -265,6 +265,10 @@ func (job *Job) run(run_report_chan chan *HostRun) {
 	job.Status = Running
 	job.RunId += 1
 	runs := job.hostRuns() // Create array of host run objects
+	if len(runs) == 0 {
+		job.Status = Failed // This should probably never happen
+		return
+	}
 	job_run := JobRun{RunId: job.RunId, JobName: job.Name, HostRuns: runs}
 	job_run.Status = Running
 	job.History = append([]JobRun{job_run}, job.History...)
