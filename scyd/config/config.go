@@ -157,8 +157,15 @@ func (job *JobSpec) ParseSchedule() error {
 }
 
 func (cfg *Config) Validate() (err error) {
-
 	return err
+}
+
+func (pool *PoolSpec) UpdateHosts(hosts []string, user string, port int) {
+	new_hosts := make([]string, len(hosts))
+	for i, host := range hosts {
+		new_hosts[i] = qualifyHost(host, user, port)
+	}
+	pool.Host = new_hosts
 }
 
 func qualifyHost(unqualified string, default_user string, default_port int) (qualified string) {

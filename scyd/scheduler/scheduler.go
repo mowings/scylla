@@ -36,6 +36,11 @@ type ChangeJobStatusRequest struct {
 	Status RunStatus
 }
 
+type UpdatePoolRequest struct {
+	Name  string
+	Hosts []string
+}
+
 func Run() (request_chan chan Request) {
 	request_chan = make(chan Request)
 	go runSchedule(request_chan)
@@ -135,6 +140,15 @@ func runSchedule(request_chan chan Request) {
 			}
 		case base_req := <-request_chan: // Client requests/commands
 			switch req := base_req.(type) {
+			case UpdatePoolRequest:
+				pool := config.PoolSpec{Name: req.Name, Host: req.Hosts}
+				for _, job := range jobs {
+					if job.PoolInst != nil && job.PoolInst.Name == pool.Name {
+						log.Printf("Updating job %s with updated pool %s", job.Name, pool.Name)
+						job.PoolInst = &pool
+					}
+				}
+
 			case ChangeJobStatusRequest:
 				log.Printf("Job status change for: %s", req.Name)
 				job := jobs[req.Name]
