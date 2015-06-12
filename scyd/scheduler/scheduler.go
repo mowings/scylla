@@ -115,13 +115,6 @@ func runSchedule(request_chan chan Request) {
 
 	run_report_chan := make(chan *HostRun)
 
-	for _, job := range jobs {
-		if job.RunOnStart {
-			log.Printf("Running on-start job: %s", job.Name)
-			job.run(run_report_chan)
-		}
-	}
-
 	for {
 		select {
 		case <-time.After(time.Second * TIMEOUT): // Check for job runs

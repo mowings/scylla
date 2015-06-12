@@ -45,7 +45,6 @@ type JobSpec struct {
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	RunTimeout     int    `gcfg:"run-timeout"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
-	RunOnStart     bool   `gcfg:"run-on-start"`
 }
 
 type Defaults struct {
