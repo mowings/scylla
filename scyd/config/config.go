@@ -220,3 +220,11 @@ func RunDir() string {
 	}
 	return path
 }
+
+func JobDir() string {
+	return filepath.Join(RunDir(), "jobs")
+}
+
+func PoolCacheDir() string {
+	return filepath.Join(RunDir(), "pools")
+}

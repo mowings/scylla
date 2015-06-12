@@ -47,22 +47,8 @@ func Run() (request_chan chan Request) {
 	return request_chan
 }
 
-func runDir() string {
-	path := os.Getenv("SCYLLA_PATH")
-	cwd, err := os.Getwd()
-	if err != nil {
-		cwd = "./"
-	}
-	if path == "" {
-		path = filepath.Join(cwd, "run")
-	} else {
-		path = filepath.Join(path, "run")
-	}
-	return path
-}
-
 func loadJobs(jobs *JobList) (err error) {
-	files, _ := filepath.Glob(filepath.Join(runDir(), "*.json"))
+	files, _ := filepath.Glob(filepath.Join(config.JobDir(), "*.json"))
 	for _, fn := range files {
 		job, err := loadJob(fn)
 		if err != nil {
@@ -209,11 +195,12 @@ func runSchedule(request_chan chan Request) {
 					for name, _ := range jobs {
 						if new_jobs[name] == nil {
 							log.Printf("Removing old job file for %s\n", name)
-							os.Remove(filepath.Join(runDir(), name+".json"))
+							os.Remove(filepath.Join(config.JobDir(), name+".json"))
 						}
 					}
 					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 					jobs = new_jobs
+
 					current_config = cfg
 				}
 			case StatusRequest:

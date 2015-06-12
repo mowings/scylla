@@ -82,7 +82,7 @@ func loadJob(path string) (job *Job, err error) {
 	lower_bound := job.RunId - job.MaxRunHistory
 	job.History = make(JobHistory, 0, 10)
 	// Load up job history. Ignore entries earlier than Runid - MaxHistory
-	run_path := filepath.Join(runDir(), job.Name, "*")
+	run_path := filepath.Join(config.JobDir(), job.Name, "*")
 	run_dirs, _ := filepath.Glob(run_path)
 	for _, rd := range run_dirs {
 		_, subdir := filepath.Split(rd)
@@ -125,8 +125,8 @@ func (job *Job) update(spec *config.JobSpec) error {
 }
 
 func (job *Job) save() (err error) {
-	path := filepath.Join(runDir(), job.Name+".json")
-	os.MkdirAll(runDir(), 0755)
+	path := filepath.Join(config.JobDir(), job.Name+".json")
+	os.MkdirAll(config.JobDir(), 0755)
 	var b []byte
 	if b, err = json.Marshal(job); err == nil {
 		err = ioutil.WriteFile(path, b, 0644)
@@ -135,7 +135,7 @@ func (job *Job) save() (err error) {
 }
 
 func (job *Job) saveRun(run *JobRun) (err error) {
-	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
+	run_dir := filepath.Join(config.JobDir(), job.Name, strconv.Itoa(job.RunId))
 	os.MkdirAll(run_dir, 0755)
 	path := filepath.Join(run_dir, "run.json")
 	var b []byte
@@ -161,7 +161,7 @@ func (job *Job) isTimeForJob() bool {
 }
 
 func cleanHistory(jobname string, runid int) {
-	run_dir := filepath.Join(runDir(), jobname, strconv.Itoa(runid))
+	run_dir := filepath.Join(config.JobDir(), jobname, strconv.Itoa(runid))
 	log.Printf("Cleaning up directory: %s\n", run_dir)
 	go func() {
 		os.RemoveAll(run_dir)
@@ -277,7 +277,7 @@ func (job *Job) run(run_report_chan chan *HostRun) {
 	keyfile := job.Keyfile
 	connection_timeout := job.ConnectTimeout
 	listen_timeout := job.RunTimeout
-	run_dir := filepath.Join(runDir(), job.Name, strconv.Itoa(job.RunId))
+	run_dir := filepath.Join(config.JobDir(), job.Name, strconv.Itoa(job.RunId))
 	job.saveRun(&job_run)
 	for _, run := range runs {
 		run.Status = Running

@@ -41,7 +41,7 @@ func sanitize(path string) string {
 
 func getJobOutput(jobname, jobid, host, command_id, fn string, res http.ResponseWriter) {
 	res.Header().Set("Content-Type", "text/plain")
-	path := sanitize(filepath.Join(config.RunDir(), jobname, jobid, host, command_id, fn))
+	path := sanitize(filepath.Join(config.JobDir(), jobname, jobid, host, command_id, fn))
 	log.Println(path)
 	r, err := os.Open(path)
 	if err == nil {
