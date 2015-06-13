@@ -8,8 +8,6 @@ import (
 	"github.com/mowings/scylla/scyd/sched"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -17,14 +15,11 @@ const DEFAULT_RUN_DIR = "/var/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
 const DEFAULT_RUN_TIMEOUT = 86400
 const DEFAULT_MAX_RUN_HISTORY = 50
-const DEFAULT_PORT = 22
-
-var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>[^:]+)(:(?P<port>\d+))?`)
 
 type PoolSpec struct {
-	Name string
-	Host []string
-	File string
+	Name    string
+	Host    []string
+	Dynamic bool
 }
 
 type JobSpec struct {
@@ -39,12 +34,14 @@ type JobSpec struct {
 	Pool           string
 	PoolMode       string
 	PoolInst       *PoolSpec `json:"-"`
+	DefaultUser    string
 	Upload         string
 	Sudo           bool
 	SudoCommand    string `gcfg:"sudo-command"`
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	RunTimeout     int    `gcfg:"run-timeout"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
+	RunOnStart     bool   `gcfg:"run-on-start"`
 }
 
 type Defaults struct {
@@ -54,7 +51,6 @@ type Defaults struct {
 	RunTimeout     int    `gcfg:"run-timeout"`
 	SudoCommand    string `gcfg:"sudo-command"`
 	User           string
-	Port           int
 	OnFailure      string `gcfg:"on-failure"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
 }
@@ -85,9 +81,6 @@ func New(fn string) (cfg *Config, err error) {
 	if cfg.Defaults.ConnectTimeout == 0 {
 		cfg.Defaults.ConnectTimeout = DEFAULT_CONNECT_TIMEOUT
 	}
-	if cfg.Defaults.Port == 0 {
-		cfg.Defaults.Port = DEFAULT_PORT
-	}
 	if cfg.Defaults.RunTimeout == 0 {
 		cfg.Defaults.RunTimeout = DEFAULT_RUN_TIMEOUT
 	}
@@ -95,12 +88,9 @@ func New(fn string) (cfg *Config, err error) {
 		cfg.Defaults.MaxRunHistory = DEFAULT_MAX_RUN_HISTORY
 	}
 
-	// Qualify Pool hosts
+	// Cherry up pool hosts
 	for name, pool := range cfg.Pool {
 		pool.Name = name
-		for idx, host := range pool.Host {
-			pool.Host[idx] = qualifyHost(host, cfg.Defaults.User, cfg.Defaults.Port)
-		}
 	}
 
 	// Parse the schedule data, set defaults
@@ -125,9 +115,7 @@ func New(fn string) (cfg *Config, err error) {
 		if job.Pass == "" {
 			job.Pass = cfg.Defaults.Pass
 		}
-		if job.Host != "" {
-			job.Host = qualifyHost(job.Host, cfg.Defaults.User, cfg.Defaults.Port)
-		}
+		job.DefaultUser = cfg.Defaults.User
 		if job.Pool != "" {
 			p := strings.Split(job.Pool, " ")
 			if len(p) > 1 {
@@ -163,47 +151,6 @@ func (job *JobSpec) ParseSchedule() error {
 
 func (cfg *Config) Validate() (err error) {
 	return err
-}
-
-func (pool *PoolSpec) UpdateHosts(hosts []string, user string, port int) {
-	new_hosts := make([]string, len(hosts))
-	for i, host := range hosts {
-		new_hosts[i] = qualifyHost(host, user, port)
-	}
-	pool.Host = new_hosts
-}
-
-func qualifyHost(unqualified string, default_user string, default_port int) (qualified string) {
-	m := FindNamedStringCaptures(host_parse, unqualified)
-
-	host := m["hostname"]
-	user := m["user"]
-	port := m["port"]
-
-	if user == "" {
-		user = default_user
-	}
-	if port == "" {
-		port = strconv.Itoa(default_port)
-	}
-
-	return fmt.Sprintf("%s@%s:%s", user, host, port)
-
-}
-
-func FindNamedStringCaptures(re *regexp.Regexp, x string) map[string]string {
-	matches := make(map[string]string)
-	parts := re.FindStringSubmatch(x)
-	if parts == nil {
-		return nil
-	}
-
-	for index, key := range host_parse.SubexpNames() {
-		if key != "" {
-			matches[key] = parts[index]
-		}
-	}
-	return matches
 }
 
 func RunDir() string {

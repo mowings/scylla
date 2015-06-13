@@ -1,8 +1,10 @@
 package scheduler
 
 import (
+	//	"encoding/json"
 	"fmt"
 	"github.com/mowings/scylla/scyd/config"
+	//	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -103,7 +105,7 @@ func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusRes
 }
 
 func runSchedule(request_chan chan Request) {
-	var current_config *config.Config
+	dynamic_pools := make(map[string][]string)
 	jobs := JobList{}
 	log.Printf("Loading saved job state...")
 	err := loadJobs(&jobs)
@@ -114,6 +116,13 @@ func runSchedule(request_chan chan Request) {
 	log.Printf("Done..")
 
 	run_report_chan := make(chan *HostRun)
+
+	// Run any run-on-start jobs
+	for _, job := range jobs {
+		if job.RunOnStart {
+			job.run(run_report_chan)
+		}
+	}
 
 	for {
 		select {
@@ -129,16 +138,12 @@ func runSchedule(request_chan chan Request) {
 			switch req := base_req.(type) {
 			case UpdatePoolRequest:
 				log.Printf("Received update for pool: %s", req.Name)
-				pool := config.PoolSpec{Name: req.Name}
-				if current_config != nil {
-					pool.UpdateHosts(req.Hosts, current_config.Defaults.User, current_config.Defaults.Port)
-				} else {
-					pool.Host = req.Hosts // Possible that we have no config data
-				}
+				hosts := req.Hosts
+				dynamic_pools[req.Name] = hosts
 				for _, job := range jobs {
-					if job.PoolInst != nil && job.PoolInst.Name == pool.Name {
-						log.Printf("Updating job %s with updated pool %s", job.Name, pool.Name)
-						job.PoolInst = &pool
+					if job.PoolInst != nil && job.PoolInst.Name == req.Name && job.PoolInst.Dynamic {
+						log.Printf("Updating job %s with updated pool %s", job.Name, req.Name)
+						job.PoolInst.Host = hosts
 						job.PoolIndex = 0
 					}
 				}
@@ -166,6 +171,12 @@ func runSchedule(request_chan chan Request) {
 				if err != nil {
 					log.Printf("Unable to parse %s : %s\n", path, err.Error)
 				} else {
+					// If the config has dymamic pools, update them from any current dynamic pools
+					for name, pool := range cfg.Pool {
+						if pool.Dynamic && dynamic_pools[name] != nil {
+							cfg.Pool[name].Host = dynamic_pools[name]
+						}
+					}
 					new_jobs := JobList{}
 					for name, job := range cfg.Job {
 						if jobs[name] == nil {
@@ -193,8 +204,6 @@ func runSchedule(request_chan chan Request) {
 					}
 					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 					jobs = new_jobs
-
-					current_config = cfg
 				}
 			case StatusRequest:
 				switch len(req.Object) {

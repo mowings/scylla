@@ -81,6 +81,11 @@ func MakeKeyring(key_filenames []string) ssh.AuthMethod {
 func (conn *SshConnection) Open(server string, auths ssh.AuthMethod, timeout int) error {
 	s := strings.Split(server, "@")
 	conn.server = s[1]
+	// See if we have a port
+	s2 := strings.Split(conn.server, ":")
+	if len(s2) != 2 {
+		conn.server += ":22"
+	}
 	conn.SudoCommand = "sudo -i /bin/bash -c"
 	conn.config = &ssh.ClientConfig{
 		User: s[0],

@@ -10,10 +10,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"time"
 )
+
+var host_parse = regexp.MustCompile(`^((?P<user>.+)@)?(?P<hostname>.+)`)
 
 type RunStatus int
 
@@ -281,6 +284,7 @@ func (job *Job) run(run_report_chan chan *HostRun) {
 	job.saveRun(&job_run)
 	for _, run := range runs {
 		run.Status = Running
+		run.Host = qualifyHost(run.Host, job.DefaultUser)
 		go runCommandsOnHost(run, sudo, keyfile, connection_timeout, listen_timeout, run_dir, run_report_chan)
 	}
 }
@@ -345,4 +349,35 @@ func runCommandsOnHost(
 	}
 	hr.EndTime = time.Now()
 	run_report_chan <- &hr
+}
+
+func qualifyHost(unqualified string, default_user string) (qualified string) {
+	m := FindNamedStringCaptures(host_parse, unqualified)
+	if m == nil {
+		return unqualified
+	}
+
+	host := m["hostname"]
+	user := m["user"]
+
+	if user == "" {
+		user = default_user
+	}
+
+	return fmt.Sprintf("%s@%s", user, host)
+}
+
+func FindNamedStringCaptures(re *regexp.Regexp, x string) map[string]string {
+	matches := make(map[string]string)
+	parts := re.FindStringSubmatch(x)
+	if parts == nil {
+		return nil
+	}
+
+	for index, key := range re.SubexpNames() {
+		if key != "" {
+			matches[key] = parts[index]
+		}
+	}
+	return matches
 }
