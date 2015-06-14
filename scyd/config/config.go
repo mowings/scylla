@@ -42,6 +42,7 @@ type JobSpec struct {
 	RunTimeout     int    `gcfg:"run-timeout"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
 	RunOnStart     bool   `gcfg:"run-on-start"`
+	Notifier       string
 }
 
 type Defaults struct {
@@ -51,12 +52,17 @@ type Defaults struct {
 	RunTimeout     int    `gcfg:"run-timeout"`
 	SudoCommand    string `gcfg:"sudo-command"`
 	User           string
-	OnFailure      string `gcfg:"on-failure"`
-	MaxRunHistory  int    `gcfg:"max-run-history"`
+	Notify         string
+	MaxRunHistory  int `gcfg:"max-run-history"`
 }
 
 type General struct {
 	User string
+}
+
+type Notifier struct {
+	Name string
+	Path string
 }
 
 type Web struct {
@@ -69,6 +75,7 @@ type Config struct {
 	Defaults Defaults
 	Pool     map[string]*PoolSpec
 	Job      map[string]*JobSpec
+	Notifier map[string]*Notifier
 }
 
 func New(fn string) (cfg *Config, err error) {
@@ -91,6 +98,10 @@ func New(fn string) (cfg *Config, err error) {
 	// Cherry up pool hosts
 	for name, pool := range cfg.Pool {
 		pool.Name = name
+	}
+
+	for name, notifier := range cfg.Notifier {
+		notifier.Name = name
 	}
 
 	// Parse the schedule data, set defaults
@@ -125,6 +136,9 @@ func New(fn string) (cfg *Config, err error) {
 			if job.PoolInst == nil {
 				return nil, errors.New(fmt.Sprintf("Bad pool %s specified by job %s", name, p[0]))
 			}
+		}
+		if job.Notifier != "" && cfg.Notifier[job.Notifier] == nil {
+			return nil, errors.New(fmt.Sprintf("Bad notifier %s specified by job %s", job.Notifier, name))
 		}
 	}
 
