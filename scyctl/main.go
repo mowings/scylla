@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -66,6 +67,20 @@ func fail(host, jobname string) {
 	fmt.Println("failed")
 }
 
+func update_pool(host, pool string) {
+	hosts := make([]string, 0, 3)
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			h := fmt.Sprintf("\"%s\"", scanner.Text())
+			hosts = append(hosts, h)
+		}
+	}
+	data := fmt.Sprintf("[%s]", strings.Join(hosts, ","))
+	doPut(host, fmt.Sprintf("pool/%s", pool), data)
+
+}
+
 func main() {
 	if len(os.Args) <= 1 {
 		err_exit("Syntax: scyctl <reload|test|run|fail> [job]")
@@ -86,6 +101,11 @@ func main() {
 			err_exit("Syntax: sysctl fail <jobname>")
 		}
 		fail(host, os.Args[2])
+	case "update_pool":
+		if len(os.Args) <= 2 {
+			err_exit("Syntax: sysctl update_pool <pool>")
+		}
+		update_pool(host, os.Args[2])
 	case "test":
 		test(host)
 	default:
