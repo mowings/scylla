@@ -106,6 +106,7 @@ func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusRes
 
 func runSchedule(request_chan chan Request) {
 	dynamic_pools := make(map[string][]string)
+	notifiers := make(map[string]*JobNotifier)
 	jobs := JobList{}
 	log.Printf("Loading saved job state...")
 	err := loadJobs(&jobs)
@@ -202,6 +203,10 @@ func runSchedule(request_chan chan Request) {
 							os.Remove(filepath.Join(config.JobDir(), name+".json"))
 						}
 					}
+					notifiers = make(map[string]*JobNotifier)
+					for name, notifier := range cfg.Notifier {
+						notifiers[name] = &JobNotifier{*notifier}
+					}
 					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 					jobs = new_jobs
 				}
@@ -222,7 +227,7 @@ func runSchedule(request_chan chan Request) {
 				log.Printf("Received run report for unknown job: %s. Discarding\n", run_report.JobName)
 				break
 			}
-			if job.complete(run_report) {
+			if job.complete(run_report, notifiers[job.Name]) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
 		}

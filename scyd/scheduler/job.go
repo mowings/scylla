@@ -180,7 +180,7 @@ func cleanHistory(jobname string, runid int) {
 	}()
 }
 
-func (job *Job) complete(r *HostRun) bool {
+func (job *Job) complete(r *HostRun, notifier *JobNotifier) bool {
 	log.Printf("Received host run report %s.%d.%s status=%d\n", job.Name, r.RunId, r.Host, r.Status)
 	i, err := job.getRunIndex(r.RunId)
 	if err != nil {
@@ -199,6 +199,9 @@ func (job *Job) complete(r *HostRun) bool {
 		job.EndTime = time.Now()
 		job.save()
 		job.saveRun(&job.History[i])
+		if notifier != nil {
+			notifier.Notify(job)
+		}
 		return true
 	}
 	return false
