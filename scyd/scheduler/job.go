@@ -29,6 +29,15 @@ const (
 	Abandoned
 )
 
+var RunStatusNames = []string{
+	"None",
+	"Running",
+	"Succeeded",
+	"Failed",
+	"Cancelled",
+	"Abandoned",
+}
+
 type JobReport struct {
 	Job
 	DetailURI string

@@ -13,6 +13,10 @@ func TestParse(t *testing.T) {
 		log.Printf("General: %+v\n", cfg.General)
 		log.Printf("Web: %+v\n", cfg.Web)
 		log.Printf("Defaults: %+v\n", cfg.Defaults)
+		log.Println("Notifiers:")
+		for k, v := range cfg.Notifier {
+			log.Printf("%s ==> %+v\n", k, *v)
+		}
 		log.Println("Pools:")
 		for k, v := range cfg.Pool {
 			log.Printf("%s ==> %+v\n", k, *v)

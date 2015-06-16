@@ -61,8 +61,12 @@ type General struct {
 }
 
 type Notifier struct {
-	Name string
-	Path string
+	Name        string
+	Path        string
+	Args        []string `gcfg:"arg"`
+	EdgeTrigger bool     `gcfg:"edge-trigger"`
+	NumFailures int      `gcfg:"num-failures"`
+	Always      bool
 }
 
 type Web struct {
@@ -102,6 +106,16 @@ func New(fn string) (cfg *Config, err error) {
 
 	for name, notifier := range cfg.Notifier {
 		notifier.Name = name
+		if notifier.Path == "" {
+			return nil, errors.New(fmt.Sprintf("Notifier %s has no path set", name))
+		}
+		stat, err := os.Stat(notifier.Path)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Notifier %s -- cannot stat %s (%s)", name, notifier.Path, err.Error()))
+		}
+		if (stat.Mode() & 0111) == 0 {
+			return nil, errors.New(fmt.Sprintf("Notifier %s -- %s must be executable", name, notifier.Path))
+		}
 	}
 
 	// Parse the schedule data, set defaults
