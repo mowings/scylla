@@ -163,9 +163,6 @@ func (conn *SshConnection) RunWithWriters(command string, timeout int, sudo bool
 	if sudo {
 		cmd = conn.SudoCommand + " " + Shellescape(command)
 	}
-
-	log.Printf("Executing [%s] on %s...\n", cmd, conn.server)
-
 	session.Stdout = stdout
 	session.Stderr = stderr
 	err = session.Run(cmd)
