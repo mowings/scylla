@@ -116,7 +116,7 @@ func runSchedule(request_chan chan Request) {
 	}
 	log.Printf("Done..")
 
-	run_report_chan := make(chan *HostRun)
+	run_report_chan := make(chan HostRun)
 
 	// Run any run-on-start jobs
 	for _, job := range jobs {
@@ -227,7 +227,7 @@ func runSchedule(request_chan chan Request) {
 				log.Printf("Received run report for unknown job: %s. Discarding\n", run_report.JobName)
 				break
 			}
-			if job.complete(run_report, notifiers[job.Notifier]) {
+			if job.complete(&run_report, notifiers[job.Notifier]) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
 		}

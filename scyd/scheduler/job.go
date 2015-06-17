@@ -267,7 +267,7 @@ func (job *Job) hostRuns() []HostRun {
 	return runs
 }
 
-func (job *Job) run(run_report_chan chan *HostRun) {
+func (job *Job) run(run_report_chan chan HostRun) {
 	if job.Host == "" && job.PoolInst != nil && len(job.PoolInst.Host) == 0 {
 		return // No hosts to run on -- just bail
 	}
@@ -309,7 +309,7 @@ func runCommandsOnHost(
 	connection_timeout int,
 	read_timeout int,
 	run_dir string,
-	run_report_chan chan *HostRun) {
+	run_report_chan chan HostRun) {
 	log.Printf("Opening connection to: %s (%d)\n", hr.Host, connection_timeout)
 	hr.StartTime = time.Now()
 	hr.Status = Running
@@ -326,7 +326,7 @@ func runCommandsOnHost(
 			hr.CommandRuns[index].StartTime = time.Now()
 			log.Printf("%s.%d - running command \"%s\" on host %s\n", hr.JobName, hr.RunId, report.CommandSpecified, hr.Host)
 			hr.CommandRuns[index].Status = Running
-			run_report_chan <- &hr
+			run_report_chan <- hr
 			stdout_f, err := os.Create(filepath.Join(command_dir, "stdout"))
 			if err != nil {
 				panic(err)
@@ -346,7 +346,7 @@ func runCommandsOnHost(
 			} else {
 				hr.CommandRuns[index].Status = Succeeded
 			}
-			run_report_chan <- &hr
+			run_report_chan <- hr
 			hr.CommandRuns[index].EndTime = time.Now()
 		}
 	}
@@ -360,7 +360,7 @@ func runCommandsOnHost(
 		}
 	}
 	hr.EndTime = time.Now()
-	run_report_chan <- &hr
+	run_report_chan <- hr
 }
 
 func qualifyHost(unqualified string, default_user string) (qualified string) {

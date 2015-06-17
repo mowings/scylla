@@ -29,9 +29,9 @@ func (notifier JobNotifier) Notify(job *Job) {
 
 func (notifier JobNotifier) fireNotification(job *Job) {
 	args := make([]string, 3)
-	args[0] = job.Name
-	args[1] = strconv.Itoa(job.History[0].RunId)
-	args[2] = RunStatusNames[job.Status]
+	args[0] = RunStatusNames[job.Status]
+	args[1] = job.Name
+	args[2] = strconv.Itoa(job.History[0].RunId)
 	args = append(args, notifier.Args...)
 	cmd := exec.Command(notifier.Path, args...)
 	log.Printf("Firing notification command %s %v", notifier.Path, args)
