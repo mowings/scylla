@@ -174,7 +174,6 @@ func (job *Job) isTimeForJob() bool {
 
 func cleanHistory(jobname string, runid int) {
 	run_dir := filepath.Join(config.JobDir(), jobname, strconv.Itoa(runid))
-	log.Printf("Cleaning up directory: %s\n", run_dir)
 	go func() {
 		os.RemoveAll(run_dir)
 	}()

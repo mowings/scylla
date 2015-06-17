@@ -128,9 +128,8 @@ func runSchedule(request_chan chan Request) {
 	for {
 		select {
 		case <-time.After(time.Second * TIMEOUT): // Check for job runs
-			for name, job := range jobs {
+			for _, job := range jobs {
 				if job.isTimeForJob() {
-					log.Printf("Time for job: %s\n", name)
 					job.run(run_report_chan)
 					job.save()
 				}
