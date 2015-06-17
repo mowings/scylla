@@ -1,0 +1,7 @@
+#!/bin/bash
+
+TYPE=${1}
+JOB=${2}
+RUN=${3}
+
+echo "Got ${TYPE} notification for ${JOB}.${RUN}" >> ./notify.log
