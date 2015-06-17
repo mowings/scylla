@@ -69,6 +69,8 @@ func (jr *JobRun) updateStatus() {
 	for _, hr := range jr.HostRuns {
 		if hr.Status == Failed {
 			jr.Status = Failed
+			jr.EndTime = time.Now()
+			return
 		}
 		if hr.Status != Running {
 			completed += 1

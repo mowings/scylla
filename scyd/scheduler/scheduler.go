@@ -227,7 +227,7 @@ func runSchedule(request_chan chan Request) {
 				log.Printf("Received run report for unknown job: %s. Discarding\n", run_report.JobName)
 				break
 			}
-			if job.complete(run_report, notifiers[job.Name]) {
+			if job.complete(run_report, notifiers[job.Notifier]) {
 				log.Printf("Completed job %s\n", job.Name)
 			}
 		}
