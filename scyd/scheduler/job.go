@@ -30,12 +30,12 @@ const (
 )
 
 var RunStatusNames = []string{
-	"None",
-	"Running",
-	"Succeeded",
-	"Failed",
-	"Cancelled",
-	"Abandoned",
+	"none",
+	"running",
+	"succeeded",
+	"failed",
+	"cancelled",
+	"abandoned",
 }
 
 type JobReport struct {
