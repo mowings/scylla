@@ -16,7 +16,6 @@ func (notifier JobNotifier) Notify(job *Job) {
 	if len(job.History) >= 2 {
 		last_status = job.History[1].Status
 	}
-	// log.Printf("NOTIFY %s %d - %d %t", job.Name, job.Status, last_status, notifier.EdgeTrigger)
 	if notifier.EdgeTrigger {
 		if job.Status != last_status {
 			notifier.fireNotification(job)
