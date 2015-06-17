@@ -3,7 +3,7 @@
 STATUS=${1}
 JOB=${2}
 RUN=${3}
-ORG=${4}
+TEAM=${4}
 TOKEN=${5}
 CHANNEL=${6}
 CURL=/opt/local/bin/curl
@@ -13,7 +13,7 @@ if [ $STATUS == "failed" ]; then
   ICON=":boom:"
 fi
 
-$CURL -XPOST "https://${ORG}.slack.com/services/hooks/incoming-webhook?token=${TOKEN}" -d "
+$CURL -XPOST "https://${TEAM}.slack.com/services/hooks/incoming-webhook?token=${TOKEN}" -d "
 {
   \"channel\": \"${CHANNEL}\",
   \"username\": \"SCYLLA\",
