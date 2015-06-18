@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const DEFAULT_RUN_DIR = "/var/scylla"
+const DEFAULT_RUN_DIR = "/var/lib/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
 const DEFAULT_RUN_TIMEOUT = 86400
 const DEFAULT_MAX_RUN_HISTORY = 50
@@ -182,17 +182,11 @@ func (cfg *Config) Validate() (err error) {
 }
 
 func RunDir() string {
-	path := os.Getenv("SCYLLA_PATH")
-	cwd, err := os.Getwd()
-	if err != nil {
-		cwd = "./"
+	root := os.Getenv("SCYLLA_PATH")
+	if root == "" {
+		root = DEFAULT_RUN_DIR
 	}
-	if path == "" {
-		path = filepath.Join(cwd, "run")
-	} else {
-		path = filepath.Join(path, "run")
-	}
-	return path
+	return filepath.Join(root, "run")
 }
 
 func JobDir() string {

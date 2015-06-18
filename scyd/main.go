@@ -15,14 +15,16 @@ import (
 
 func writePid() {
 	pid := os.Getpid()
-	err := ioutil.WriteFile("/var/run/scylla.pid", []byte(strconv.Itoa(pid)), 0644)
+	os.MkdirAll("/var/run/scylla", 0755)
+	err := ioutil.WriteFile("/var/run/scylla/pid", []byte(strconv.Itoa(pid)), 0644)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func writeEndpoint(endpoint string) {
-	err := ioutil.WriteFile("/var/run/scylla.endpoint", []byte(endpoint), 0644)
+	os.MkdirAll("/var/run/scylla", 0755)
+	err := ioutil.WriteFile("/var/run/scylla/endpoint", []byte(endpoint), 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -56,8 +58,7 @@ func main() {
 	if cfg.General.User != "" {
 		log.Printf("Running as : %s", cfg.General.User)
 		if err := setUser(cfg.General.User); err != nil {
-			log.Printf("Unable to change uid: %s", err.Error())
-			os.Exit(-1)
+			log.Printf("WARNING: Unable to drop privileges: %s", err.Error())
 		}
 	}
 

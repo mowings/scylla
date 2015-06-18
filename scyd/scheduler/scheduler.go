@@ -1,10 +1,10 @@
 package scheduler
 
 import (
-	//	"encoding/json"
+	"encoding/json"
 	"fmt"
 	"github.com/mowings/scylla/scyd/config"
-	//	"io/ioutil"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -47,6 +47,35 @@ func Run() (request_chan chan Request) {
 	request_chan = make(chan Request)
 	go runSchedule(request_chan)
 	return request_chan
+}
+
+func saveConfig(cfg *config.Config) (err error) {
+	path := filepath.Join(config.RunDir(), "config.json")
+	os.MkdirAll(config.RunDir(), 0755)
+	var b []byte
+	if b, err = json.Marshal(cfg); err == nil {
+		err = ioutil.WriteFile(path, b, 0644)
+	}
+	return err
+}
+
+func loadConfig() (*config.Config, error) {
+	path := filepath.Join(config.RunDir(), "config.json")
+	var cfg config.Config
+	var err error
+	_, err = os.Stat(path)
+	if err != nil {
+		return nil, err // Assume stat failure is missing file
+	}
+	var data []byte
+
+	if data, err = ioutil.ReadFile(path); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 func loadJobs(jobs *JobList) (err error) {
@@ -107,9 +136,16 @@ func reportJobRun(jobs *JobList, name string, runid string, rchan chan StatusRes
 func runSchedule(request_chan chan Request) {
 	dynamic_pools := make(map[string][]string)
 	notifiers := make(map[string]*JobNotifier)
+	var cur_config *config.Config
+	var err error
+	if cur_config, err = loadConfig(); err != nil {
+		log.Printf("Unable to load last known good config: %s", err.Error())
+	} else {
+		log.Printf("Reloaded current good config. %d jobs and %d host pools", len(cur_config.Job), len(cur_config.Pool))
+	}
 	jobs := JobList{}
 	log.Printf("Loading saved job state...")
-	err := loadJobs(&jobs)
+	err = loadJobs(&jobs)
 	if err != nil {
 		log.Printf("NOTE: Unable to open jobs state file: %s\n", err.Error())
 		jobs = JobList{}
@@ -208,6 +244,8 @@ func runSchedule(request_chan chan Request) {
 					}
 					jobs = nil // Go garbage collection in maps can ve weird. Easiest to nil out the old map
 					jobs = new_jobs
+					saveConfig(cfg)
+					cur_config = cfg
 				}
 			case StatusRequest:
 				switch len(req.Object) {

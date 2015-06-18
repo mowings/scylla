@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const HOST_INFO_PATH = "/var/run/scylla.endpoint"
+const HOST_INFO_PATH = "/var/run/scylla/endpoint"
 
 func err_exit(msg string) {
 	fmt.Println(msg)
