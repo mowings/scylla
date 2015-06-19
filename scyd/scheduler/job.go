@@ -289,13 +289,13 @@ func (job *Job) run(run_report_chan chan HostRun) {
 	sudo := job.Sudo
 	keyfile := job.Keyfile
 	connection_timeout := job.ConnectTimeout
-	listen_timeout := job.RunTimeout
+	read_timeout := job.ReadTimeout
 	run_dir := filepath.Join(config.JobDir(), job.Name, strconv.Itoa(job.RunId))
 	job.saveRun(&job_run)
 	for _, run := range runs {
 		run.Status = Running
 		run.Host = qualifyHost(run.Host, job.DefaultUser)
-		go runCommandsOnHost(run, sudo, keyfile, connection_timeout, listen_timeout, run_dir, run_report_chan)
+		go runCommandsOnHost(run, sudo, keyfile, connection_timeout, read_timeout, run_dir, run_report_chan)
 	}
 }
 
