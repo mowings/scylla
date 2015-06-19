@@ -13,7 +13,7 @@ import (
 
 const DEFAULT_RUN_DIR = "/var/lib/scylla"
 const DEFAULT_CONNECT_TIMEOUT = 20
-const DEFAULT_RUN_TIMEOUT = 86400
+const DEFAULT_READ_TIMEOUT = 86400
 const DEFAULT_MAX_RUN_HISTORY = 50
 
 type PoolSpec struct {
@@ -39,7 +39,7 @@ type JobSpec struct {
 	Sudo           bool
 	SudoCommand    string `gcfg:"sudo-command"`
 	ConnectTimeout int    `gcfg:"connect-timeout"`
-	RunTimeout     int    `gcfg:"run-timeout"`
+	ReadTimeout    int    `gcfg:"read-timeout"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
 	RunOnStart     bool   `gcfg:"run-on-start"`
 	Notifier       string
@@ -49,7 +49,7 @@ type Defaults struct {
 	Keyfile        string
 	Pass           string
 	ConnectTimeout int    `gcfg:"connect-timeout"`
-	RunTimeout     int    `gcfg:"run-timeout"`
+	ReadTimeout    int    `gcfg:"read-timeout"`
 	SudoCommand    string `gcfg:"sudo-command"`
 	User           string
 	Notify         string
@@ -92,8 +92,8 @@ func New(fn string) (cfg *Config, err error) {
 	if cfg.Defaults.ConnectTimeout == 0 {
 		cfg.Defaults.ConnectTimeout = DEFAULT_CONNECT_TIMEOUT
 	}
-	if cfg.Defaults.RunTimeout == 0 {
-		cfg.Defaults.RunTimeout = DEFAULT_RUN_TIMEOUT
+	if cfg.Defaults.ReadTimeout == 0 {
+		cfg.Defaults.ReadTimeout = DEFAULT_READ_TIMEOUT
 	}
 	if cfg.Defaults.MaxRunHistory == 0 {
 		cfg.Defaults.MaxRunHistory = DEFAULT_MAX_RUN_HISTORY
@@ -128,8 +128,8 @@ func New(fn string) (cfg *Config, err error) {
 		if job.ConnectTimeout == 0 {
 			job.ConnectTimeout = cfg.Defaults.ConnectTimeout
 		}
-		if job.RunTimeout == 0 {
-			job.RunTimeout = cfg.Defaults.RunTimeout
+		if job.ReadTimeout == 0 {
+			job.ReadTimeout = cfg.Defaults.ReadTimeout
 		}
 		if job.MaxRunHistory == 0 {
 			job.MaxRunHistory = cfg.Defaults.MaxRunHistory
