@@ -6,9 +6,11 @@ Scylla is a job management system that allows cron-like functionality centralize
 * ssh-based. No remote agents required. Offers both connect and read-timeouts to detect hung jobs
 * Run jobs on single hosts, or pools of hosts. Jobs run across pools can run round-robin (1 host chosen per job) or in parallel
 * Dead simple configuration
+* Simplified support for sudoed jobs
+* Support for file uploads
 * Alert on failures
 * Built in web server
-* Full API, including calls to run jobs and update host pools
+* Full API, including calls to run jobs and update/create host pools
 
 ## Installing it
 ### From a package
@@ -56,9 +58,47 @@ user=scylla
 ```
 The `listen` directive tells us where to listen for the web UI and API calls. You may wish to restrict the address to localhost, as there is no security on either interface built in. You can use any proxy server (nginx works well) to add basic authentication and restrict api access as required.
 
-You will need to set at least a single private ssh key file in the '[defaults]` section that can be used to log in to remote hosts. To add more key files, add more keyfile entries here. Note that we do not support password authentication at all, and ssh-agent support is not built in (although it is planned). You should also set a default user to login to any remote hosts. Note that keys and user names can be overridden easily in individual jobs, but defaults are a good idea.
+You will need to set at least a single private ssh key file in the `[defaults]` section that can be used to log in to remote hosts. To add more key files, add more `keyfile` entries here. Note that scylla does not support password authentication at all, and ssh-agent support is not built in (although it is planned). You should also set a default `user` to login to remote hosts. Note that keys and user names can be overridden easily in individual jobs, but defaults are a good idea.
 
 ### Adding a simple job
+Let's add a simple job that runs `uptime` on a single remote host. To add a new job, create a new `job` section in `scylla.conf` with the job name, host and command:
 
+```
+[job "test"]
+description = Scylla test job
+host = scylla@foo.example.com:22
+command = uptime
+```
+These directives should be self-explanatory, with the exception of `host`. A scylla host is specified as 
 
+    [user@]host[:port]
+    
+Of course, we specified a default user in our `defaults` section and, sensibly, the destination port defaults to 22, so we can really write this job section as:
+
+```
+[job "test"]
+description = Scylla test job
+host = foo.example.com
+command = uptime
+```
+But it's good to know we can change the user and port as needed. 
+
+As written, this is a usable job -- but without a schedule it can only be run manually via either the API or via scyctl: `scyctl run test`. So let's add a schedule:
+
+```
+[job "test"]
+description = Scylla test job
+host = foo.example.com
+command = uptime
+schedule = cron */5 * * * *
+```
+
+Now our job will run at 5-minute intervals. We use a standard (numeric only) cron format, where each section represents:
+* minute (0-59)
+* hour (0-23
+* month day (1-31)
+* month(1-12)
+* day of week(0-6), where 0 is Sunday
+
+Each section can include a range(`-`), interval (`*/n`) and multiple comma-separated values. This is a very basic cron schedule, although enhancements are in the works to support non-numeric days of the week, last-day of the month and nth dow of the month (second wed, last sun, etc).
 
