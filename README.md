@@ -2,7 +2,7 @@
 Scylla is a job management system that allows cron-like functionality centralized on a single host, using  ssh instead of remote agents to run jubs remotely. Scylla was inspired by Yelp's excellent [tron](https://github.com/Yelp/Tron) package, but offers a number of improvements.
 
 ## Features
-* No dependencies, small footprint. Scylla is distributed as a pair of executables. Binaries are available as tar files and .deb files (see below).
+* No dependencies, small footprint. Scylla is distributed as a pair of executables and a few supporting files. Binaries are available as tar files, .deb files and .rpms (see below).
 * ssh-based. No remote agents required. Offers both connect and read-timeouts to detect hung jobs
 * Run jobs on single hosts, or pools of hosts. Jobs run across pools can run round-robin (1 host chosen per job) or in parallel
 * Dead simple configuration
@@ -40,4 +40,25 @@ $ go build
 This will leave the binaries `scyctl` and `scyd` in their respective source directories
 
 ## Getting Started
+Scylla is configured via an ini-formatted  config file, `/etc/scylla.conf` You should have a bare-bones version of this file installed already. If not, go ahead and set that up now:
+
+### Setting up the web listener and defaults
+```
+[web]
+listen = "0.0.0.0:8080"
+
+[defaults]
+# keyfile="keys/secret"
+connect-timeout=10
+read-timeout=0 # Default, 1 day
+sudo-command = "sudo -i /bin/bash -c"
+user=scylla
+```
+The `listen` directive tells us where to listen for the web UI and API calls. You may wish to restrict the address to localhost, as there is no security on either interface built in. You can use any proxy server (nginx works well) to add basic authentication and restrict api access as required.
+
+You will need to set at least a single private ssh key file in the '[defaults]` section that can be used to log in to remote hosts. To add more key files, add more keyfile entries here. Note that we do not support password authentication at all, and ssh-agent support is not built in (although it is planned). You should also set a default user to login to any remote hosts. Note that keys and user names can be overridden easily in individual jobs, but defaults are a good idea.
+
+### Adding a simple job
+
+
 
