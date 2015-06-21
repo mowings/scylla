@@ -81,9 +81,13 @@ description = Scylla test job
 host = foo.example.com
 command = uptime
 ```
-But it's good to know we can change the user and port as needed. 
+But it's good to know we can change the user and port as needed. Note that you can have multiple command attributes for a job; each command will be run in sequence.
 
-As written, this is a usable job -- but without a schedule it can only be run manually via either the API or via scyctl: `scyctl run test`. So let's add a schedule:
+Once the job has been added, tell scyd to update itself with the reload command:
+
+    scyctl reload
+
+As written, `test` is a usable job -- but without a schedule it can only be run manually via either the API or via scyctl: `scyctl run test`. So let's add a schedule:
 
 ```
 [job "test"]
@@ -93,7 +97,9 @@ command = uptime
 schedule = cron */5 * * * *
 ```
 
-Now our job will run at 5-minute intervals. We use a standard (numeric only) cron format, where each section represents:
+Now our job will run at 5-minute intervals. Run `scyctl reload` to reload the configuration
+
+The cron schedule type  use a standard (numeric only) cron format, where each section represents:
 * minute (0-59)
 * hour (0-23
 * month day (1-31)
@@ -102,3 +108,53 @@ Now our job will run at 5-minute intervals. We use a standard (numeric only) cro
 
 Each section can include a range(`-`), interval (`*/n`) and multiple comma-separated values. This is a very basic cron schedule, although enhancements are in the works to support non-numeric days of the week, last-day of the month and nth dow of the month (second wed, last sun, etc).
 
+We can also define pools of hosts to run a single job on:
+
+```
+[pool "webservers"] # Use user "foo" and port 2222
+host = foo@webserver-1.foo.bar:2222
+host = foo@@webserver-2.foo.bar:2222
+host = foo@@webserver-2.foo.bar:2222
+
+[job "test"]
+description = Scylla test job
+pool = webservers
+command = uptime
+schedule = cron */5 * * * *
+```
+
+Each time the test job runs, it will choose a different host from the pool to run on (in a round-robin fashion). If you want the job to run on all hosts in the pool at the same time, change the job's pool attribute from `pool=webservers` to `pool = webservers parallel`
+
+If you add `dynamic = yes` to any pool definition, the pool hosts can be updated via the api. You can also update pool hosts via scyctl by piping a list of hosts (one-per-line) into the update_pool command. So for example:
+
+    <some_command> | scyctl update_pool webservers
+
+We can specifiy that we would like to be notified when a job fails. First set up a notification in the config file:
+
+```
+[notifier "slack"]
+path=./notifiers/slack # executable file that sends a message to our team via slack
+arg=team
+arg=token
+arg=channel
+
+# tell our job to use the slack notifier
+[job "test"]
+description = Scylla test job
+host = foo.example.com
+command = uptime
+schedule = cron */5 * * * *
+notifier = slack
+```
+Now, whenever our job fails, we will get a notification via slack. By default, the notifier is triggered every time a job fails, and then once after the first sucess. You can also specifiy `edge-trigger = true` to only alert on the first failure, and to then stay silent until the first success. Finally, set 'always' to true if you wish to be alerted on all runs.
+
+The `path` attribute in a notifier section refers to any executable file. When the notification fires, this file will be run with at least three parameters (in this order):
+
+* run status (as a string) ie, `succeeded` `failed`
+* The job name
+* The integer run id
+
+Additionally, any `args` specified in the notifier section will be passed in the sequence specified.
+
+## More Documentation?
+Not yet. Please have a look at test.conf in scyd/config for more info on config file format. More documentation should be coming soon.
