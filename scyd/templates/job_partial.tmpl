@@ -21,7 +21,7 @@
       <div class="col-md-2">{{.Job.Pool}}</div>
     {{end }}
     <div class="col-md-1"><b>Timeouts: </b></div>
-    <div class="col-md-5">c:{{.Job.ConnectTimeout}} / r: {{.Job.RunTimeout}} </div>
+    <div class="col-md-5">c:{{.Job.ConnectTimeout}} / r: {{.Job.ReadTimeout}} </div>
   </div>
  {{if .Job.Pool }}
    <div class="row"><div class="col-md-12"><b>Pool Hosts:</b></div></div>
