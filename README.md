@@ -2,7 +2,7 @@
 Scylla is a job management system that allows cron-like functionality centralized on a single host, using  ssh instead of remote agents to run jubs remotely. Scylla was inspired by Yelp's excellent [tron](https://github.com/Yelp/Tron) package, but offers a number of improvements.
 
 ## Features
-* No dependencies, small footprint. Scylla is distributed as a pair of executables and a few supporting files. Binaries are available as tar files, .deb files and .rpms (see below).
+* No dependencies, small footprint. Scylla is distributed as a pair of executables and a few supporting files. Binaries are available as tar files and .deb files for 64 and 32-bit versions of linux. You can target other systems if you build from source.
 * ssh-based. No remote agents required. Offers both connect and read-timeouts to detect hung jobs
 * Run jobs on single hosts, or pools of hosts. Jobs run across pools can run round-robin (1 host chosen per job) or in parallel
 * Dead simple configuration
