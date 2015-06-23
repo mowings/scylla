@@ -13,8 +13,10 @@ Scylla is a job management system that allows cron-like functionality centralize
 * Full API, including calls to run jobs and update/create host pools
 
 ## Installing it
+Binary packages are stored in github with each release. Click `releases` to see the available releases.
+
 ### From a package
-If you install scylla via the debian or rpm files, you are done.
+If you install scylla via the debian files, you are done. 
 
 ### From the archive
 You can also install from the tar file. Once you have extracted the files from the archive, copy the `scyd/` directory to either `/opt` or `/usr/local`. Copy the scyctl utility to anywhere on your path. 
