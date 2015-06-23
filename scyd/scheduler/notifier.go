@@ -12,6 +12,9 @@ type JobNotifier struct {
 }
 
 func (notifier JobNotifier) Notify(job *Job) {
+	if notifier.Name == "none" {
+		return
+	}
 	last_status := Succeeded
 	if len(job.History) >= 2 {
 		last_status = job.History[1].Status

@@ -75,7 +75,12 @@ func Run(ctx *Context) {
 	})
 
 	server.Put("/api/v1/reload", func(req *http.Request, r render.Render) {
-		loadConfig(*ctx)
+		_, err := loadConfig(*ctx)
+		if err != nil {
+			r.JSON(400, err.Error())
+		} else {
+			r.JSON(200, "ok")
+		}
 	})
 	server.Put("/api/v1/run/:job", func(params martini.Params, req *http.Request, r render.Render) {
 		ctx.ReqChan <- scheduler.RunJobRequest(params["job"])

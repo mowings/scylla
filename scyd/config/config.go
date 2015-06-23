@@ -29,7 +29,6 @@ type JobSpec struct {
 	Schedule       string
 	ScheduleInst   sched.Sched `json:"-"`
 	Keyfile        string
-	Pass           string
 	Host           string
 	Pool           string
 	PoolMode       string
@@ -47,12 +46,11 @@ type JobSpec struct {
 
 type Defaults struct {
 	Keyfile        string
-	Pass           string
 	ConnectTimeout int    `gcfg:"connect-timeout"`
 	ReadTimeout    int    `gcfg:"read-timeout"`
 	SudoCommand    string `gcfg:"sudo-command"`
 	User           string
-	Notify         string
+	Notifier       string
 	MaxRunHistory  int `gcfg:"max-run-history"`
 }
 
@@ -117,6 +115,9 @@ func New(fn string) (cfg *Config, err error) {
 			return nil, errors.New(fmt.Sprintf("Notifier %s -- %s must be executable", name, notifier.Path))
 		}
 	}
+	if cfg.Defaults.Notifier != "" && cfg.Notifier[cfg.Defaults.Notifier] == nil {
+		return nil, errors.New(fmt.Sprintf("Default Notifier %s does not exist)", cfg.Defaults.Notifier))
+	}
 
 	// Parse the schedule data, set defaults
 	for name, job := range cfg.Job {
@@ -137,8 +138,8 @@ func New(fn string) (cfg *Config, err error) {
 		if job.Keyfile == "" {
 			job.Keyfile = cfg.Defaults.Keyfile
 		}
-		if job.Pass == "" {
-			job.Pass = cfg.Defaults.Pass
+		if job.Notifier == "" {
+			job.Notifier = cfg.Defaults.Notifier
 		}
 		job.DefaultUser = cfg.Defaults.User
 		if job.Pool != "" {

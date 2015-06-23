@@ -43,7 +43,11 @@ func doPut(host string, resource string, data string) []byte {
 		err_exit(fmt.Sprintf("Request body read for %s failed: %s", resource, err.Error()))
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		err_exit(fmt.Sprintf("HTTP Failure sending command  %s failed: %d", resource, response.StatusCode))
+		body := ""
+		if contents != nil {
+			body = string(contents)
+		}
+		err_exit(fmt.Sprintf("Command  %s failed: %d (%s)", resource, response.StatusCode, body))
 	}
 	return contents
 }
