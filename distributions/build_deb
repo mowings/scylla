@@ -30,6 +30,7 @@ Description: Scylla
 123
 cp preinst ${PACKAGE}/DEBIAN/
 cp postinst ${PACKAGE}/DEBIAN/
+cp postrm ${PACKAGE}/DEBIAN/
 dpkg-deb --build ${PACKAGE}
 cp ${PACKAGE}.deb ${PACKAGE}-${ARCH}.deb
 
