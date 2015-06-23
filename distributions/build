@@ -1,0 +1,18 @@
+#!/bin/bash
+VERSION=0.1-2
+echo "Building deb i386..."
+pushd ../scyd
+GOOS=linux GOARCH=386 go build
+cd ../scyctl
+GOOS=linux GOARCH=386 go build
+popd
+./build_deb $VERSION i386
+echo "done."
+echo "Building deb amd64..."
+pushd ../scyd
+GOOS=linux GOARCH=amd64 go build
+cd ../scyctl
+GOOS=linux GOARCH=amd64 go build
+popd
+./build_deb $VERSION amd64
+echo "done"

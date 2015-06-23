@@ -1,0 +1,5 @@
+#!/bin/sh
+chown scylla:scylla /var/run/scylla
+chown scylla:scylla /var/lib/scylla
+chown -R scylla:scylla /usr/local/scyd
+

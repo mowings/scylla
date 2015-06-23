@@ -1,0 +1,37 @@
+#!/bin/bash
+VERSION=${1}
+ARCH=${2}
+
+PACKAGE=scylla_${VERSION}
+mkdir -p ${PACKAGE}/DEBIAN
+rm -rf ${PACKAGE}/etc
+mkdir -p ${PACKAGE}/etc/init.d
+rm -rf ${PACKAGE}/usr/local
+mkdir -p ${PACKAGE}/usr/local/bin
+mkdir -p ${PACKAGE}/usr/local/scyd
+cp ../scyd/etc/scylla.conf ${PACKAGE}/etc
+cp ../scyd/scyd ${PACKAGE}/usr/local/scyd
+cp -rp ../scyd/templates ${PACKAGE}/usr/local/scyd
+cp -rp ../scyd/public  ${PACKAGE}/usr/local/scyd
+cp -rp ../scyd/notifiers  ${PACKAGE}/usr/local/scyd
+cp ../scyctl/scyctl  ${PACKAGE}/usr/local/bin
+cp ../scyd/init/scylla ${PACKAGE}/etc/init.d
+cat <<123 > ${PACKAGE}/DEBIAN/control
+package: scylla
+Version: ${VERSION}
+Section: base
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: Mister Owings <mikey@swampgas.com>
+Description: Scylla
+ Complete multi-host replacement for cron
+  Requires only ssh -- no agent. Can execute commands on single hosts or
+   across pools of hosts. Includes optional alerting, web interface and complete API
+123
+cp preinst ${PACKAGE}/DEBIAN/
+cp postinst ${PACKAGE}/DEBIAN/
+dpkg-deb --build ${PACKAGE}
+cp ${PACKAGE}.deb ${PACKAGE}-${ARCH}.deb
+
+
+
