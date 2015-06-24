@@ -50,6 +50,9 @@ func (h Helpers) DisplayTime(t time.Time) string {
 
 func (h Helpers) DisplayDuration(from time.Time, to time.Time) string {
 	duration := to.Sub(from)
+	if to.Equal(nilTime) {
+		duration = time.Now().Sub(from) // Assume duration is for a running job with a nil to time
+	}
 	if int(duration.Minutes()) <= 0 {
 		return "< 1m"
 	}
