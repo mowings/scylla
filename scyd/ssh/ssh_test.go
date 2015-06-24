@@ -2,12 +2,18 @@ package ssh
 
 import (
 	"log"
+	"os"
 	"testing"
 )
 
+var HOST = os.Getenv("TEST_HOST")
+
 func openConn() (conn SshConnection, err error) {
+	if HOST == "" {
+		panic("TEST_HOST envar was not set!")
+	}
 	auths := MakeKeyring([]string{"private_key"})
-	err = conn.Open("tron@devmo.hero3d.net:22", auths, 5)
+	err = conn.Open(HOST, auths, 5)
 	if err != nil {
 		panic("Unable to connect: " + err.Error())
 	}
