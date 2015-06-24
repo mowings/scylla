@@ -55,7 +55,9 @@ func getJobOutput(jobname, jobid, host, command_id, fn string, res http.Response
 
 func Run(ctx *Context) {
 	loadConfig(*ctx) // Force a load on startup
+	logger := log.New(os.Stdout, "[martini] ", log.Ldate|log.Ltime)
 	server := martini.Classic()
+	server.Map(logger)
 	server.Use(gzip.All())
 	server.Use(render.Renderer(render.Options{
 		Layout: "layout",
