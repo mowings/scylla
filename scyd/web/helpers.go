@@ -45,11 +45,17 @@ func (h Helpers) DisplayAgo(from time.Time) string {
 }
 
 func (h Helpers) DisplayTime(t time.Time) string {
+	if t.Equal(nilTime) {
+		return ""
+	}
 	return t.Format(time.RFC822)
 }
 
 func (h Helpers) DisplayDuration(from time.Time, to time.Time) string {
 	duration := to.Sub(from)
+	if from.Equal(nilTime) {
+		return ""
+	}
 	if to.Equal(nilTime) {
 		duration = time.Now().Sub(from) // Assume duration is for a running job with a nil to time
 	}
