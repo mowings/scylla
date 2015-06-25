@@ -91,6 +91,9 @@ func loadJob(path string) (job *Job, err error) {
 	if err != nil {
 		return job, err
 	}
+	if job.Status == Running {
+		job.Status = Abandoned
+	}
 	lower_bound := job.RunId - job.MaxRunHistory
 	job.History = make(JobHistory, 0, 10)
 	// Load up job history. Ignore entries earlier than Runid - MaxHistory
@@ -130,9 +133,6 @@ func (job *Job) update(spec *config.JobSpec) error {
 	var t time.Time
 	job.LastChecked = t
 	job.PoolIndex = 0
-	if job.Status == Running {
-		job.Status = Abandoned
-	}
 	return nil
 }
 
