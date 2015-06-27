@@ -162,7 +162,7 @@ func (job *Job) saveRun(run *JobRun) (err error) {
 
 func (job *Job) isTimeForJob() bool {
 	now := time.Now()
-	if time.Since(job.LastChecked) > time.Minute {
+	if time.Since(job.EndTime) > time.Minute {
 		schedule := job.ScheduleInst
 		job.LastChecked = now
 		if schedule.Match(&now) {
@@ -270,7 +270,8 @@ func (job *Job) run(run_report_chan chan HostRun) {
 		return // No hosts to run on -- just bail
 	}
 	if job.Status == Running {
-		job.RunsQueued += 1
+		log.Printf("WARNING: will skip job %s. Already running.", job.Name)
+		job.RunsOutstanding += 1
 		return
 	}
 	job.StartTime = time.Now()
