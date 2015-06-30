@@ -167,7 +167,7 @@ func (job *JobSpec) ParseSchedule() error {
 	}
 	m := sched.RexSched.FindStringSubmatch(job.Schedule)
 	if m == nil {
-		errors.New("Unable to parse schedule: " + job.Schedule)
+		return errors.New("Unable to parse schedule: " + job.Schedule)
 	}
 	if m[1] == "cron" {
 		job.ScheduleInst = &cronsched.ParsedCronSched{}
