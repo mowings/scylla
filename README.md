@@ -27,6 +27,8 @@ If you want to run as a non-privileged user (recomended), you will need to manua
 * Change to the `scyd/` directory
 * As root, run either `./scyd` or (better) `sudo -u <non_privileged_user> ./scyd`
 
+A systemd service file, `scylla.service` is included to run via systemd
+
 Scyd logs to stdout. Note that if you run as a non-privileged user, you need to be sure `/var/run/scylla` and `/var/lib/scylla` exist and are owned by that user.
 
 ## Building it

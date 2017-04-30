@@ -1,0 +1,16 @@
+[Unit]
+Description=Scylla Service
+Before=
+After=network.target
+
+[Service]
+User=scylla
+KillMode=process
+Type=simple
+LimitNOFILE=65535
+WorkingDirectory=/usr/local/scyd
+ExecStart=/usr/local/scyd/scyd
+Restart=always
+
+[Install]
+WantedBy=default.target
