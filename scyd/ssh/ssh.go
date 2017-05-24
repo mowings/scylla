@@ -88,8 +88,9 @@ func (conn *SshConnection) Open(server string, auths ssh.AuthMethod, timeout int
 	}
 	conn.SudoCommand = "sudo -i /bin/bash -c"
 	conn.config = &ssh.ClientConfig{
-		User: s[0],
-		Auth: []ssh.AuthMethod{auths},
+		User:            s[0],
+		Auth:            []ssh.AuthMethod{auths},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	conn.original_server = server
 	conn.timeout = timeout
