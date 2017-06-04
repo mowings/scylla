@@ -4,13 +4,13 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/gzip"
 	"github.com/martini-contrib/render"
-	"github.com/mowings/scylla/scyd/config"
-	"github.com/mowings/scylla/scyd/scheduler"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"scyd/config"
+	"scyd/scheduler"
 	"strings"
 )
 

@@ -1,9 +1,9 @@
 package scheduler
 
 import (
-	"github.com/mowings/scylla/scyd/config"
 	"log"
 	"os/exec"
+	"scyd/config"
 	"strconv"
 )
 

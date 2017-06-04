@@ -3,10 +3,10 @@ package web
 import (
 	"fmt"
 	"github.com/martini-contrib/render"
-	"github.com/mowings/scylla/scyd/scheduler"
 	"log"
 	"net/http"
 	"reflect"
+	"scyd/scheduler"
 )
 
 func qualifyURL(path string, req *http.Request) string {

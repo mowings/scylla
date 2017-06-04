@@ -2,8 +2,8 @@ package web
 
 import (
 	"fmt"
-	"github.com/mowings/scylla/scyd/scheduler"
 	"html/template"
+	"scyd/scheduler"
 	"time"
 )
 

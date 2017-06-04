@@ -3,11 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/mowings/scylla/scyd/cronsched"
-	"github.com/mowings/scylla/scyd/sched"
 	"gopkg.in/gcfg.v1"
 	"os"
 	"path/filepath"
+	"scyd/cronsched"
+	"scyd/sched"
 	"strings"
 )
 

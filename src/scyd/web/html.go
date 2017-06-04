@@ -2,8 +2,8 @@ package web
 
 import (
 	"github.com/martini-contrib/render"
-	"github.com/mowings/scylla/scyd/scheduler"
 	"net/http"
+	"scyd/scheduler"
 	"strconv"
 )
 

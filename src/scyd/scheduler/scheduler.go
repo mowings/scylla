@@ -3,11 +3,11 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mowings/scylla/scyd/config"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"scyd/config"
 	"sort"
 	"time"
 )

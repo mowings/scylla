@@ -3,8 +3,8 @@ package web
 import (
 	"encoding/json"
 	"github.com/martini-contrib/render"
-	"github.com/mowings/scylla/scyd/scheduler"
 	"net/http"
+	"scyd/scheduler"
 )
 
 func renderJobInfoJson(ctx *Context, parts []string, req *http.Request, r render.Render) {

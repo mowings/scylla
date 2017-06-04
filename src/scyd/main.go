@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"github.com/mowings/scylla/scyd/config"
-	"github.com/mowings/scylla/scyd/scheduler"
-	"github.com/mowings/scylla/scyd/web"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
+	"scyd/config"
+	"scyd/scheduler"
+	"scyd/web"
 	"strconv"
 	"syscall"
 )
