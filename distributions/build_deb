@@ -9,13 +9,13 @@ mkdir -p ${PACKAGE}/etc/init.d
 rm -rf ${PACKAGE}/usr/local
 mkdir -p ${PACKAGE}/usr/local/bin
 mkdir -p ${PACKAGE}/usr/local/scyd
-cp ../scyd/etc/scylla.conf ${PACKAGE}/etc
-cp ../scyd/scyd ${PACKAGE}/usr/local/scyd
-cp -rp ../scyd/templates ${PACKAGE}/usr/local/scyd
-cp -rp ../scyd/public  ${PACKAGE}/usr/local/scyd
-cp -rp ../scyd/notifiers  ${PACKAGE}/usr/local/scyd
-cp ../scyctl/scyctl  ${PACKAGE}/usr/local/bin
-cp ../scyd/init/scylla ${PACKAGE}/etc/init.d
+cp ./etc/scylla.conf ${PACKAGE}/etc/scylla.example.conf
+cp ../bin/linux-${ARCH}/scyd ${PACKAGE}/usr/local/scyd
+cp -rp ../src/scyd/templates ${PACKAGE}/usr/local/scyd
+cp -rp ../src/scyd/public  ${PACKAGE}/usr/local/scyd
+cp -rp ../src/scyd/notifiers  ${PACKAGE}/usr/local/scyd
+cp ../bin/linux-${ARCH}/scyctl  ${PACKAGE}/usr/local/bin
+cp ../src/scyd/init/scylla ${PACKAGE}/etc/init.d
 cat <<123 > ${PACKAGE}/DEBIAN/control
 package: scylla
 Version: ${VERSION}
