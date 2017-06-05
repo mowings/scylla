@@ -21,29 +21,27 @@ If you install scylla via the debian files, you are done.
 ### From the archive
 You can also install from the tar file. Once you have extracted the files from the archive, copy the `scyd/` directory to either `/opt` or `/usr/local`. Copy the scyctl utility to anywhere on your path. 
 
-If you want to run as a non-privileged user (recomended), you will need to manually create `/var/run/scylla` and `/var/lib/scylla`, create the user you wish to run as and change ownership of those directories to that of the scylla user. You should also copy the sample `scylla.conf` to /etc/scylla.
+If you want to run as a non-privileged user (recomended), you will need to manually create `/var/run/scylla` and `/var/lib/scylla`, create the user you wish to run as and change ownership of those directories to that of the scylla user. You should also need to create an `/etc/scylla.conf` file.
 
-## Running it
+## Running it manually
 * Change to the `scyd/` directory
 * As root, run either `./scyd` or (better) `sudo -u <non_privileged_user> ./scyd`
 
-A systemd service file, `scylla.service` is included to run via systemd
+A systemd service file, `scylla.service` is included to run via systemd. If you installed via the deb files you will have a service file
+in /etc/init.d
 
 Scyd logs to stdout. Note that if you run as a non-privileged user, you need to be sure `/var/run/scylla` and `/var/lib/scylla` exist and are owned by that user.
 
 ## Building it
-Install go. I'd suggest not using a package manager.
-```
-(be sure you have set $GOPATH)
-$ mkdir -p $GOPATH/src/github.com/mowings
-$ cd $GOPATH/src/github.com/mowings
-$ git clone https://github.com/mowings/scylla.git
-$ cd scylla/scyd
-$ go build
-$ cd ../scyctl
-$ go build
-````
-This will leave the binaries `scyctl` and `scyd` in their respective source directories
+Scylla is built using [gb](https://getgb.io/), although you can build it with vanilla go. To use `gb`, just change to the scylla project root
+and run `gb`.
+
+To build using go, update your GOPATH to include the current project and vendor dirs, and run `go build` as usuall. From the project root:
+
+    export GOPATH=$GOPATH:`pwd`:`pwd`/vendor
+
+This will set your GOPATH so that go knows about the scylla project and vendor dirs.
+     
 
 ## Getting Started
 Scylla is configured via an ini-formatted  config file, `/etc/scylla.conf` You should have a bare-bones version of this file installed already. If not, go ahead and set that up now:
