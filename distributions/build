@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.1-2
+VERSION=1.0.0
 echo "Building deb i386..."
 pushd ../scyd
 GOOS=linux GOARCH=386 go build

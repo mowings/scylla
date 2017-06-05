@@ -25,7 +25,7 @@ func TestMatch(t *testing.T) {
 	if !sched.Match(&tm) {
 		t.Error("Failed match")
 	}
-	err = sched.Parse("10 3,15 * * *")
+	err = sched.Parse("10 3,15   * * *")
 	tm, _ = time.Parse(time.RFC3339, "2014-11-26T03:15:00Z")
 	if sched.Match(&tm) {
 		t.Error("Matched when it shouldn't")

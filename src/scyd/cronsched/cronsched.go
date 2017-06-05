@@ -12,6 +12,7 @@ import (
 var NUM_REX = regexp.MustCompile("^\\d{1,2}$")
 var RANGE_REX = regexp.MustCompile("^\\d{1,2}-\\d{1,2}$")
 var STEP_REX = regexp.MustCompile("^\\*/\\d{1,2}$")
+var SEP_REX = regexp.MustCompile(" +")
 
 type ParsedCronSched struct {
 	unparsed string
@@ -44,7 +45,7 @@ func (sched *ParsedCronSched) Match(t *time.Time) bool {
 func (sched *ParsedCronSched) Parse(line string) (err error) {
 	sched.unparsed = line
 
-	parts := strings.Split(line, " ")
+	parts := SEP_REX.Split(line, -1)
 
 	if len(parts) != 5 {
 		return errors.New("Wrong number of sections in cron entry: " + line)
