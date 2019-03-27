@@ -162,7 +162,7 @@ func (job *Job) saveRun(run *JobRun) (err error) {
 
 func (job *Job) isTimeForJob() bool {
 	now := time.Now()
-	if time.Since(job.EndTime) > time.Minute {
+	if now.After(nextMinute(job.StartTime)) {
 		schedule := job.ScheduleInst
 		job.LastChecked = now
 		if schedule.Match(&now) {
@@ -170,6 +170,11 @@ func (job *Job) isTimeForJob() bool {
 		}
 	}
 	return false
+}
+
+func nextMinute(t time.Time) (next time.Time) {
+	next = t.Add(time.Duration(60-t.Second()) * time.Second)
+	return
 }
 
 func cleanHistory(jobname string, runid int) {
