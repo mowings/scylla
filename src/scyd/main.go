@@ -13,6 +13,8 @@ import (
 	"syscall"
 )
 
+const VERSION = "1.01"
+
 func writePid() {
 	pid := os.Getpid()
 	os.MkdirAll("/var/run/scylla", 0755)
@@ -43,7 +45,7 @@ func main() {
 	var ctx web.Context
 	cfg_path := flag.String("config", "/etc/scylla.conf", "Config file path")
 	flag.Parse()
-	log.Printf("Starting scylla server...")
+	log.Printf("Starting scylla server v%s...", VERSION)
 
 	ctx.CfgPath = *cfg_path
 	// Vaildate config on startup and save pid and endpoints

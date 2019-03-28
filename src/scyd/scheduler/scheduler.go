@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const TIMEOUT = 10
+const TIMEOUT = 1
 
 // Response
 type StatusResponse interface{}

@@ -275,10 +275,13 @@ func (job *Job) run(run_report_chan chan HostRun) {
 		return // No hosts to run on -- just bail
 	}
 	if job.Status == Running {
-		log.Printf("WARNING: will skip job %s. Already running.", job.Name)
+		if job.RunsOutstanding == 0 {
+			log.Printf("WARNING: will skip job %s. Already running.", job.Name)
+		}
 		job.RunsOutstanding += 1
 		return
 	}
+	job.RunsOutstanding = 0
 	job.StartTime = time.Now()
 	job.Status = Running
 	job.RunId += 1
