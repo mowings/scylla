@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-const VERSION = "1.01"
+const VERSION = "1.0.2"
 
 func writePid() {
 	pid := os.Getpid()

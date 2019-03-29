@@ -235,7 +235,14 @@ func (job *Job) getRun(id string) *JobRun {
 func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnection, error) {
 	auths := ssh.MakeKeyring([]string{keyfile})
 	var c ssh.SshConnection
-	err := c.Open(host, auths, timeout)
+	var err error
+	for i := 0; i < 8; i++ {
+		err = c.Open(host, auths, timeout)
+		if err != nil {
+			log.Printf("WARNING: Connection failed (%s). Weill retry (%d)", err.Error(), i)
+			time.Sleep(2 * time.Second)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
