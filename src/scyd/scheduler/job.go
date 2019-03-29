@@ -236,12 +236,15 @@ func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnectio
 	auths := ssh.MakeKeyring([]string{keyfile})
 	var c ssh.SshConnection
 	var err error
-	for i := 0; i < 8 && err != nil; i++ {
+	for i := 0; i < 8; i++ {
 		err = c.Open(host, auths, timeout)
 		if err != nil {
 			log.Printf("WARNING: Connection failed (%s). Weill retry (%d)", err.Error(), i)
 			time.Sleep(2 * time.Second)
+		} else {
+			break
 		}
+
 	}
 	if err != nil {
 		return nil, err
