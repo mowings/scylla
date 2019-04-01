@@ -7,12 +7,17 @@ import (
 )
 
 var HOST = os.Getenv("TEST_HOST")
+var KEYFILE = os.Getenv("TEST_KEYFILE")
 
 func openConn() (conn SshConnection, err error) {
+	// Use docker env values by default
 	if HOST == "" {
-		panic("TEST_HOST envar was not set!")
+		HOST = "scylla@localhost"
 	}
-	auths := MakeKeyring([]string{"private_key"})
+	if KEYFILE == "" {
+		KEYFILE = "/home/scylla/.ssh/scylla"
+	}
+	auths := MakeKeyring([]string{KEYFILE})
 	err = conn.Open(HOST, auths, 5)
 	if err != nil {
 		panic("Unable to connect: " + err.Error())

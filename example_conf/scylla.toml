@@ -1,0 +1,42 @@
+[general]
+[web]
+listen = "0.0.0.0:4000"
+
+[defaults]
+keyfile="/home/scylla/.ssh/scylla"
+connect-timeout=10
+read-timeout=0 # Default
+sudo-command = "sudo -i /bin/bash -c"
+user=scylla
+notifier = slack
+
+[notifier "slack"]
+path=./notifiers/slack
+arg=foo
+arg=changeme
+arg=ops
+
+[notifier "slack_edge"]
+path=./notifiers/slack
+arg=foo
+arg=changeme
+arg=ops
+edge-trigger=true
+
+
+[job "test"]
+schedule = cron * * * * *
+description = Show environment
+host = localhost
+sudo = yes
+command =  set && sleep 65
+notifier = slack
+
+
+[job "test2"]
+schedule = cron */2 * * * *
+description = Every 2 minutes
+host = localhost
+sudo = yes
+command =  echo "Hello"
+notifier = slack

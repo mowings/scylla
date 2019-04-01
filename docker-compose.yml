@@ -1,0 +1,7 @@
+version: '3'
+services:
+    scylla:
+        build: .
+        volumes:
+            - .:/app
+        hostname: scylla-dev

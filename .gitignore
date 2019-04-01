@@ -1,1 +1,7 @@
 /keys
+*.swp
+bin/
+distributions/scylla_*
+pkg/
+src/scyctl/scyctl
+src/scyd/scyd

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+STATUS=${1}
+JOB=${2}
+RUN=${3}
+TEAM=${4}
+TOKEN=${5}
+CHANNEL=${6}
+CURL=/usr/bin/curl
+ICON=":green_heart:"
+
+if [ $STATUS == "failed" ]; then
+  ICON=":boom:"
+fi
+
+$CURL -XPOST "https://${TEAM}.slack.com/services/hooks/incoming-webhook?token=${TOKEN}" -d "
+{
+  \"channel\": \"${CHANNEL}\",
+  \"username\": \"SCYLLA\",
+  \"icon_emoji\": \"${ICON}\",
+  \"text\": \"Job ${JOB}.${RUN} status: ${STATUS}\"
+}"
