@@ -45,7 +45,7 @@ within this environment (from `/app`):
 
 You can also build 
 
-   gb build
+    gb build
 
 The image also includes my vim setup, which may or may not be to your taste.
 
