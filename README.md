@@ -33,6 +33,21 @@ in /etc/init.d
 Scyd logs to stdout. Note that if you run as a non-privileged user, you need to be sure `/var/run/scylla` and `/var/lib/scylla` exist and are owned by that user.
 
 ## Building it
+
+### Within docker
+
+Be sure docker and docker-compose are installed on your local system. Then execute `run_dev.sh` to bring up the container and attach. You can run tests and execute scylla
+within this environment (from `/app`):
+
+    bin/scyd --config example_conf/scylla.toml
+
+You can also build 
+
+   gb build
+
+The image also includes my vim setup, which may or may not be to your taste.
+
+### Without docker
 Scylla is built using [gb](https://getgb.io/), although you can build it with vanilla go. To use `gb`, just change to the scylla project root
 and run `gb`.
 
