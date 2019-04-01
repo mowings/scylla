@@ -34,7 +34,9 @@ Scyd logs to stdout. Note that if you run as a non-privileged user, you need to 
 
 ## Building it
 
-### Within docker
+You can build using docker or from the command line. Docker is preferred
+
+### Within docker (preferred)
 
 Be sure docker and docker-compose are installed on your local system. Then execute `run_dev.sh` to bring up the container and attach. You can run tests and execute scylla
 within this environment (from `/app`):
