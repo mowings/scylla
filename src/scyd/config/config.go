@@ -41,6 +41,7 @@ type JobSpec struct {
 	ReadTimeout    int    `gcfg:"read-timeout"`
 	MaxRunHistory  int    `gcfg:"max-run-history"`
 	RunOnStart     bool   `gcfg:"run-on-start"`
+	FailsToNotify  int    `gcfg:"fails-to-notify"`
 	Notifier       string
 }
 
@@ -63,7 +64,6 @@ type Notifier struct {
 	Path        string
 	Args        []string `gcfg:"arg"`
 	EdgeTrigger bool     `gcfg:"edge-trigger"`
-	NumFailures int      `gcfg:"num-failures"`
 	Always      bool
 }
 

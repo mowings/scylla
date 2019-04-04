@@ -24,19 +24,11 @@ arg=ops
 edge-trigger=true
 
 
-[job "test"]
-schedule = cron * * * * *
-description = Show environment
+[job "2fails"]
+command = "if [[ $((RANDOM % 3)) == 0 ]]; then echo FAILED; exit 1; else echo OK; exit 0; fi"
+schedule = cron */1 * * * *
+description = Every 1 minutes
 host = localhost
-sudo = yes
-command =  set && sleep 65
-notifier = slack
-
-
-[job "test2"]
-schedule = cron */2 * * * *
-description = Every 2 minutes
-host = localhost
-sudo = yes
-command =  echo "Hello"
+sudo = no
+# fails-to-notify=2
 notifier = slack

@@ -19,6 +19,8 @@ func (notifier JobNotifier) Notify(job *Job) {
 	if len(job.History) >= 2 {
 		last_status = job.History[1].Status
 	}
+	cf := job.consecutiveFailures()
+	log.Printf("consecutive failures: %d", cf)
 	if notifier.EdgeTrigger {
 		if job.Status != last_status {
 			notifier.fireNotification(job)
@@ -26,8 +28,10 @@ func (notifier JobNotifier) Notify(job *Job) {
 	} else if notifier.Always {
 		notifier.fireNotification(job)
 	} else if job.Status == Succeeded && last_status == Failed {
-		notifier.fireNotification(job)
-	} else if job.Status == Failed {
+		if cf >= job.FailsToNotify {
+			notifier.fireNotification(job)
+		}
+	} else if job.Status == Failed && (cf == job.FailsToNotify || job.FailsToNotify == 0) {
 		notifier.fireNotification(job)
 	}
 }

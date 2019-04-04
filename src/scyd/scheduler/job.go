@@ -198,7 +198,7 @@ func (job *Job) complete(r *HostRun, notifier *JobNotifier) bool {
 	job.History[i].updateStatus()
 	if job.History[0].Status != Running {
 		job.Status = job.History[0].Status
-		log.Printf("Completed job %s.%d (%d)\n", job.Name, job.RunId, job.Status)
+		log.Printf("Completed job %s.%d (%s)\n", job.Name, job.RunId, RunStatusNames[job.Status])
 		job.EndTime = time.Now()
 		job.save()
 		job.saveRun(&job.History[i])
@@ -408,4 +408,24 @@ func FindNamedStringCaptures(re *regexp.Regexp, x string) map[string]string {
 		}
 	}
 	return matches
+}
+
+//
+// Find the total number of consecutive failures prior to the
+// current run. Add in the current run if it is a failure
+func (job *Job) consecutiveFailures() (failures int) {
+	if len(job.History) <= 1 {
+		return
+	}
+	if job.History[0].Status == Failed {
+		failures++
+	}
+	for _, h := range job.History[1:len(job.History)] {
+		if h.Status == Failed {
+			failures++
+		} else {
+			break
+		}
+	}
+	return
 }
