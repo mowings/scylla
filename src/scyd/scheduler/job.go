@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"scyd/ssh"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,6 +38,11 @@ var RunStatusNames = []string{
 	"failed",
 	"cancelled",
 	"abandoned",
+}
+
+type Runner interface {
+	RunWithWriters(string, int, bool, io.Writer, io.Writer) error
+	Close()
 }
 
 type JobReport struct {
@@ -232,7 +239,7 @@ func (job *Job) getRun(id string) *JobRun {
 	return nil
 }
 
-func openConnection(keyfile string, host string, timeout int) (*ssh.SshConnection, error) {
+func openConnection(keyfile string, host string, timeout int) (Runner, error) {
 	auths := ssh.MakeKeyring([]string{keyfile})
 	var c ssh.SshConnection
 	var err error
@@ -329,7 +336,16 @@ func runCommandsOnHost(
 	run_report_chan chan HostRun) {
 	hr.StartTime = time.Now()
 	hr.Status = Running
-	conn, err := openConnection(keyfile, hr.Host, connection_timeout)
+	var conn Runner
+	var err error
+	parts := strings.Split(hr.Host, "@")
+	if len(parts) == 2 && parts[1] == "local" {
+		log.Printf("Running local command...")
+		conn = NewLocalRunner() // This is a local run via exec()
+	} else {
+		log.Printf("Running remote command on [%s]", hr.Host)
+		conn, err = openConnection(keyfile, hr.Host, connection_timeout)
+	}
 	if err != nil {
 		hr.CommandRuns[0].Error = err.Error() // Just set first command to error on a failed connection
 		hr.CommandRuns[0].Status = Failed
